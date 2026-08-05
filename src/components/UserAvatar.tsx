@@ -22,10 +22,10 @@ export function UserAvatar({
   className,
   alt,
 }: {
-  src?: string | null;
-  name?: string | null;
-  className?: string;
-  alt?: string;
+  src?: string | null | undefined;
+  name?: string | null | undefined;
+  className?: string | undefined;
+  alt?: string | undefined;
 }) {
   const initial = name?.trim()?.charAt(0)?.toUpperCase() ?? "";
   return (
