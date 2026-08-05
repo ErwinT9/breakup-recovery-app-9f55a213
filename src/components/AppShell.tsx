@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Award, Flag, Home, LayoutGrid, LifeBuoy, Menu, Trophy } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { MoreDrawer } from "@/components/MoreDrawer";
@@ -11,11 +12,11 @@ import { wireNotificationTaps } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { to: "/home", label: "Home", icon: Home },
-  { to: "/flags", label: "Flags", icon: Flag },
-  { to: "/wins", label: "Wins", icon: Trophy },
-  { to: "/badges", label: "Badges", icon: Award },
-  { to: "/activity", label: "Activity", icon: LayoutGrid },
+  { to: "/home", label: "Home", i18nKey: "nav.home", icon: Home },
+  { to: "/flags", label: "Flags", i18nKey: "nav.flags", icon: Flag },
+  { to: "/wins", label: "Wins", i18nKey: "nav.wins", icon: Trophy },
+  { to: "/badges", label: "Badges", i18nKey: "nav.badges", icon: Award },
+  { to: "/activity", label: "Activity", i18nKey: "nav.activity", icon: LayoutGrid },
 ] as const;
 
 export function AppShell({
@@ -30,6 +31,7 @@ export function AppShell({
   action?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { t } = useTranslation();
   const [sosOpen, setSosOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -87,7 +89,7 @@ export function AppShell({
         aria-label="Primary"
         className="surface-blur fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-md items-center justify-around border-t border-border px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
       >
-        {TABS.map(({ to, label, icon: Icon }) => {
+        {TABS.map(({ to, i18nKey, icon: Icon }) => {
           const active = pathname === to;
           const isFlags = to === "/flags";
           return (
@@ -115,7 +117,7 @@ export function AppShell({
                   aria-hidden
                 />
               </span>
-              {label}
+              {t(i18nKey)}
             </Link>
           );
         })}

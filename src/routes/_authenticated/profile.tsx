@@ -9,14 +9,13 @@ import {
   Download,
   Globe,
   Image as ImageIcon,
-  LogOut,
-  Mail,
   RefreshCw,
-  ShieldCheck,
   Trash2,
+  Upload,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { SoftCard } from "@/components/SoftCard";
@@ -49,8 +48,11 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
+import { pickAvatar } from "@/lib/avatar";
+import { LANGUAGES, setLanguage, type LanguageCode } from "@/lib/i18n";
 import { haptic } from "@/lib/native/haptics";
 import { storage } from "@/lib/native/storage";
+import { toastOnce } from "@/lib/toastOnce";
 import {
   DEFAULT_NOTIFICATION_PREFS,
   NOTIFICATION_CATEGORIES,
@@ -104,30 +106,29 @@ function Row({
 }
 
 function SettingsScreen() {
+  const { t, i18n } = useTranslation();
   const { user, signOut } = useAuth();
   const userId = user?.id ?? "";
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { online, pending } = useNetworkStatus();
-  const { isPremium, restore, busy } = useSubscription();
+  const { isPremium } = useSubscription();
 
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
   const [recovery, setRecovery] = useState("");
-  const [language, setLanguage] = useState("en");
   const [notifs, setNotifs] = useState<NotifPrefs>(DEFAULT_NOTIFS);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [logoutOpen, setLogoutOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     analytics.screen("settings");
     void loadNotificationPrefs().then(setNotifs);
-    void storage.get<string>("nc:language", "en").then(setLanguage);
     void storage.get<string | null>("nc:last-sync", null).then(setLastSync);
   }, []);
 
@@ -204,7 +205,30 @@ function SettingsScreen() {
       );
       queryClient.setQueryData(["streak", userId], next);
     }
-    toast.success("Saved. It syncs automatically when you're online.");
+    toastOnce("profile-saved", t("toast.saved"), "success");
+  };
+
+  const choosePhoto = async () => {
+    haptic.light();
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await pickAvatar();
+      if (!dataUrl) return;
+      setAvatar(dataUrl);
+      await update.mutateAsync({ avatar_url: dataUrl });
+      toastOnce("avatar-updated", t("toast.photoUpdated"), "success");
+    } catch {
+      toastOnce("avatar-failed", t("toast.photoFailed"), "error");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    haptic.light();
+    setAvatar("");
+    await update.mutateAsync({ avatar_url: null });
+    toastOnce("avatar-removed", t("toast.photoRemoved"), "success");
   };
 
   const syncNow = async () => {
@@ -213,7 +237,7 @@ function SettingsScreen() {
     const stamp = new Date().toISOString();
     await storage.set("nc:last-sync", stamp);
     setLastSync(stamp);
-    toast.success("Backup complete.");
+    toastOnce("backup-complete", t("toast.backupComplete"), "success");
   };
 
   const exportData = async () => {
@@ -230,7 +254,7 @@ function SettingsScreen() {
     link.download = "no-contact-tracker-data.json";
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Your data was exported.");
+    toastOnce("exported", t("toast.exported"), "success");
   };
 
   const deleteAccount = async () => {
@@ -278,35 +302,57 @@ function SettingsScreen() {
         >
           <ArrowLeft className="size-5" aria-hidden />
         </button>
-        <h1 className="mt-4 text-[2rem] font-semibold tracking-tight">Settings</h1>
+        <h1 className="mt-4 text-[2rem] font-semibold tracking-tight">{t("settings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
       </header>
 
       <main className="flex-1 space-y-4 px-5 py-5">
         <SoftCard className="space-y-4">
-          <Row icon={UserRound} title="Edit profile" description="Name, bio and photo." />
-          <div className="flex items-center gap-3">
-            <Avatar className="size-14">
-              {avatar ? <AvatarImage src={avatar} alt="Profile picture" /> : null}
+          <Row
+            icon={UserRound}
+            title={t("settings.editProfile")}
+            description={t("settings.editProfileDesc")}
+          />
+          <div className="flex items-center gap-4">
+            <Avatar className="size-16">
+              {avatar ? <AvatarImage src={avatar} alt={t("settings.profilePhoto")} /> : null}
               <AvatarFallback className="bg-mint text-on-tint">
                 {(name || "N").slice(0, 1).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="avatar-url" className="flex items-center gap-2">
-                <ImageIcon className="size-4" aria-hidden /> Profile picture URL
-              </Label>
-              <Input
-                id="avatar-url"
-                value={avatar}
-                placeholder="https://…"
-                onChange={(event) => setAvatar(event.target.value)}
-                className="h-11 rounded-2xl"
-              />
+            <div className="flex-1 space-y-2">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ImageIcon className="size-4" aria-hidden /> {t("settings.profilePhoto")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="press h-10 rounded-2xl"
+                  disabled={photoBusy}
+                  onClick={() => void choosePhoto()}
+                >
+                  <Upload className="size-4" aria-hidden />
+                  {avatar ? t("common.change") : t("common.upload")}
+                </Button>
+                {avatar ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="press h-10 rounded-2xl text-destructive"
+                    disabled={photoBusy}
+                    onClick={() => void removePhoto()}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    {t("common.remove")}
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("settings.photoHint")}</p>
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="display-name">Display name</Label>
+            <Label htmlFor="display-name">{t("settings.displayName")}</Label>
             <Input
               id="display-name"
               maxLength={40}
@@ -316,7 +362,7 @@ function SettingsScreen() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio">{t("settings.bio")}</Label>
             <Textarea
               id="bio"
               maxLength={200}
@@ -328,7 +374,7 @@ function SettingsScreen() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="recovery-date" className="flex items-center gap-2">
-              <CalendarDays className="size-4" aria-hidden /> Recovery start date
+              <CalendarDays className="size-4" aria-hidden /> {t("settings.recoveryStart")}
             </Label>
             <Input
               id="recovery-date"
@@ -344,16 +390,20 @@ function SettingsScreen() {
             disabled={update.isPending}
             onClick={() => void saveProfile()}
           >
-            Save changes
+            {t("settings.saveChanges")}
           </Button>
         </SoftCard>
 
         <SoftCard className="space-y-4">
-          <Row icon={Bell} title="Notifications" description="Choose what you want to hear about.">
+          <Row
+            icon={Bell}
+            title={t("settings.notifications")}
+            description={t("settings.notificationsDesc")}
+          >
             <Switch
               checked={profile.data?.notifications_enabled ?? false}
               onCheckedChange={(checked) => void toggleReminders(checked)}
-              aria-label="Notifications"
+              aria-label={t("settings.notifications")}
             />
           </Row>
           {profile.data?.notifications_enabled ? (
@@ -407,24 +457,27 @@ function SettingsScreen() {
         </SoftCard>
 
         <SoftCard className="space-y-3">
-          <Row icon={Globe} title="Language" description="App language" />
+          <Row
+            icon={Globe}
+            title={t("settings.language")}
+            description={t("settings.languageDesc")}
+          />
           <Select
-            value={language}
+            value={i18n.language as LanguageCode}
             onValueChange={(value) => {
-              setLanguage(value);
-              void storage.set("nc:language", value);
-              toast.success("Language preference saved.");
+              void setLanguage(value as LanguageCode);
+              toastOnce("language-saved", t("toast.languageSaved"), "success");
             }}
           >
             <SelectTrigger className="h-12 rounded-2xl">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-              <SelectItem value="fr">Français</SelectItem>
-              <SelectItem value="de">Deutsch</SelectItem>
-              <SelectItem value="hi">हिन्दी</SelectItem>
+            <SelectContent className="max-h-72">
+              {LANGUAGES.map((entry) => (
+                <SelectItem key={entry.code} value={entry.code}>
+                  {entry.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </SoftCard>
@@ -478,41 +531,6 @@ function SettingsScreen() {
           </SoftCard>
         )}
 
-        <SoftCard className="space-y-2">
-          <Link to="/letters" className="press flex items-center gap-3 py-2">
-            <Mail className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Unsent letters</span>
-          </Link>
-          <Link to="/privacy" className="press flex items-center gap-3 py-2">
-            <ShieldCheck className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Privacy policy</span>
-          </Link>
-          <Link to="/terms" className="press flex items-center gap-3 py-2">
-            <ShieldCheck className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Terms of service</span>
-          </Link>
-          <button
-            type="button"
-            className="press flex w-full items-center gap-3 py-2 text-left"
-            disabled={busy}
-            onClick={() => void restore()}
-          >
-            <RefreshCw className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Restore purchases</span>
-          </button>
-          <button
-            type="button"
-            className="press flex w-full items-center gap-3 py-2 text-left"
-            onClick={() => {
-              haptic.light();
-              setLogoutOpen(true);
-            }}
-          >
-            <LogOut className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Log out</span>
-          </button>
-        </SoftCard>
-
         <Button
           variant="ghost"
           className="press h-12 w-full rounded-2xl text-destructive"
@@ -554,35 +572,6 @@ function SettingsScreen() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <AlertDialogContent className="rounded-3xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Log Out</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to log out?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
-            <Button
-              className="rounded-2xl"
-              onClick={async () => {
-                haptic.light();
-                try {
-                  await queryClient.cancelQueries();
-                  queryClient.clear();
-                  await clearUserCache(userId);
-                  await signOut();
-                  toast.success("Logged out successfully.");
-                  void navigate({ to: "/auth", replace: true });
-                } catch (error) {
-                  toast.error(humanizeError(error));
-                }
-              }}
-            >
-              Log Out
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

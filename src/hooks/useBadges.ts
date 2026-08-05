@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import {
   badgeRepo,
@@ -34,10 +34,19 @@ import {
   type BadgeStats,
 } from "@/lib/badges";
 import { celebrate } from "@/lib/celebrate";
+import { onceWithin, toastOnce } from "@/lib/toastOnce";
 import { daysSince } from "@/lib/streak";
 
 const EMPTY_ACTIVITY = getActivity();
 const EMPTY_LIST: never[] = [];
+
+/**
+ * Module-level so every mount of this hook (Home + Badges) shares one record
+ * of what has already been announced. Without it the same unlock is toasted
+ * once per mounted screen and again on every StrictMode effect replay.
+ */
+const announcedKeys = new Set<string>();
+let unlockInFlight = false;
 
 /** Reactive view of the local activity counters. */
 export function useActivity(): ActivityState {
@@ -63,6 +72,7 @@ export type BadgeState = {
 export function useBadges(options: { autoUnlock?: boolean } = {}): BadgeState {
   const { autoUnlock = false } = options;
   const { user } = useAuth();
+  const { t } = useTranslation();
   const userId = user?.id ?? "";
   const enabled = Boolean(userId);
   const queryClient = useQueryClient();
@@ -123,28 +133,40 @@ export function useBadges(options: { autoUnlock?: boolean } = {}): BadgeState {
 
   const announced = useRef(false);
   useEffect(() => {
-    if (!autoUnlock || !enabled) return;
+    if (!autoUnlock || !enabled || unlockInFlight) return;
     const keys = earnedBadgeKeys(stats);
-    const fresh = keys.filter((key) => !owned.has(key));
+    const fresh = keys.filter(
+      (key) => !owned.has(key) && !announcedKeys.has(`${userId}:${key}`),
+    );
     if (fresh.length === 0) {
       announced.current = true;
       return;
     }
     const isFirstLoad = !announced.current && owned.size === 0;
     announced.current = true;
-    void badgeRepo.unlock(userId, keys).then((rows) => {
-      queryClient.setQueryData(["badges", userId], rows);
-      if (isFirstLoad) return;
-      const named = fresh.map((key) => badgeByKey(key)?.label).filter(Boolean) as string[];
-      if (named.length === 0) return;
-      void celebrate();
-      toast(
-        named.length === 1
-          ? `🎉 Badge unlocked: ${named[0]}`
-          : `🎉 ${named.length} badges unlocked: ${named.join(", ")}`,
-      );
-    });
-  }, [autoUnlock, enabled, stats, owned, userId, queryClient]);
+    // Claim the keys synchronously so a parallel mount can't announce them too.
+    fresh.forEach((key) => announcedKeys.add(`${userId}:${key}`));
+    unlockInFlight = true;
+    void badgeRepo
+      .unlock(userId, keys)
+      .then((rows) => {
+        queryClient.setQueryData(["badges", userId], rows);
+        if (isFirstLoad) return;
+        const named = fresh.map((key) => badgeByKey(key)?.label).filter(Boolean) as string[];
+        if (named.length === 0) return;
+        const id = `badge:${fresh.slice().sort().join("|")}`;
+        onceWithin(id, () => void celebrate());
+        toastOnce(
+          id,
+          named.length === 1
+            ? t("toast.badgeUnlocked", { name: named[0] })
+            : t("toast.badgesUnlocked", { count: named.length, names: named.join(", ") }),
+        );
+      })
+      .finally(() => {
+        unlockInFlight = false;
+      });
+  }, [autoUnlock, enabled, stats, owned, userId, queryClient, t]);
 
   const unlockedCount = progress.filter(
     (item) => item.unlocked || owned.has(item.badge.key),
