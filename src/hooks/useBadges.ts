@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import {
   badgeRepo,
@@ -72,6 +72,7 @@ export type BadgeState = {
 export function useBadges(options: { autoUnlock?: boolean } = {}): BadgeState {
   const { autoUnlock = false } = options;
   const { user } = useAuth();
+  const { t } = useTranslation();
   const userId = user?.id ?? "";
   const enabled = Boolean(userId);
   const queryClient = useQueryClient();
