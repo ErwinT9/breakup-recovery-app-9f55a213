@@ -18,6 +18,29 @@ const TOKEN_KEY = "nc:push-token";
 let listenersWired = false;
 let currentUserId: string | null = null;
 
+/**
+ * Android 8+ drops any notification whose channel does not exist. Both the FCM
+ * default channel (AndroidManifest meta-data) and local reminders use this id,
+ * so it must exist before the first push arrives — not only once reminders are
+ * scheduled.
+ */
+const CHANNEL_ID = "no-contact-reminders";
+
+export async function ensurePushChannel(): Promise<void> {
+  await safeNative(async () => {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    await PushNotifications.createChannel({
+      id: CHANNEL_ID,
+      name: "Daily support",
+      description: "Reminders, encouragement and milestone celebrations",
+      importance: 5,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+    });
+  });
+}
+
 async function deviceId(): Promise<string> {
   const existing = await storage.get<string | null>(DEVICE_KEY, null);
   if (existing) return existing;
@@ -63,7 +86,11 @@ async function wireListeners(): Promise<void> {
   listenersWired = true;
   await safeNative(async () => {
     const { PushNotifications } = await import("@capacitor/push-notifications");
+    // A fresh set of listeners only — repeated registration attempts must not
+    // stack duplicates (that caused ghost/duplicate handling).
+    await PushNotifications.removeAllListeners();
     await PushNotifications.addListener("registration", (value) => {
+      if (import.meta.env.DEV) console.info("[push] FCM token", value.value);
       if (currentUserId) void saveToken(currentUserId, value.value);
     });
     await PushNotifications.addListener("registrationError", (error) => {
@@ -87,6 +114,7 @@ async function wireListeners(): Promise<void> {
 export async function registerPush(userId: string): Promise<string | null> {
   if (!isNative() || !userId) return null;
   currentUserId = userId;
+  await ensurePushChannel();
   await wireListeners();
 
   const token = await safeNative<string | null>(async () => {
@@ -98,16 +126,25 @@ export async function registerPush(userId: string): Promise<string | null> {
     if (permission.receive !== "granted") return null;
 
     return new Promise<string | null>((resolve) => {
-      const timeout = setTimeout(() => resolve(null), 10_000);
-      void PushNotifications.addListener("registration", (value) => {
+      // The persistent listeners above already save the token; these are
+      // one-shot and removed as soon as they fire so nothing accumulates.
+      let settled = false;
+      const handles: { remove: () => Promise<void> }[] = [];
+      const finish = (value: string | null) => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timeout);
-        resolve(value.value);
-      });
+        handles.forEach((handle) => void handle.remove());
+        resolve(value);
+      };
+      const timeout = setTimeout(() => finish(null), 15_000);
+      void PushNotifications.addListener("registration", (value) => finish(value.value)).then(
+        (handle) => handles.push(handle),
+      );
       void PushNotifications.addListener("registrationError", (error) => {
-        clearTimeout(timeout);
         analytics.error(error, { stage: "push_registration" });
-        resolve(null);
-      });
+        finish(null);
+      }).then((handle) => handles.push(handle));
       void PushNotifications.register();
     });
   }, null);
@@ -116,13 +153,33 @@ export async function registerPush(userId: string): Promise<string | null> {
   return token ?? null;
 }
 
-/** Called on sign-in / app start with an existing session. Never throws. */
+/**
+ * Called on sign-in / app start with an existing session. Never throws.
+ * Registration is retried on every launch so a user who granted permission
+ * after the initial sign-in still ends up with a stored token.
+ */
 export async function syncPushRegistration(userId: string): Promise<void> {
   try {
     await registerPush(userId);
   } catch (error) {
     analytics.error(error, { stage: "push_sync" });
   }
+}
+
+/** True when the OS has already granted push permission for this app. */
+export async function hasPushPermission(): Promise<boolean> {
+  if (!isNative()) return false;
+  const granted = await safeNative(async () => {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    const permission = await PushNotifications.checkPermissions();
+    return permission.receive === "granted";
+  }, false);
+  return Boolean(granted);
+}
+
+/** The FCM token stored for this device, if registration has succeeded. */
+export async function currentPushToken(): Promise<string | null> {
+  return storage.get<string | null>(TOKEN_KEY, null);
 }
 
 /** Marks this device's token inactive so logged-out devices stop receiving pushes. */
