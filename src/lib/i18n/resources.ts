@@ -5,6 +5,21 @@
  * translated — only static UI chrome lives here.
  */
 
+import { screensEn } from "./en/screens";
+import { uiEn } from "./en/ui";
+import { bn as bnExtra } from "./locales/bn";
+import { de as deExtra } from "./locales/de";
+import { es as esExtra } from "./locales/es";
+import { fr as frExtra } from "./locales/fr";
+import { hi as hiExtra } from "./locales/hi";
+import { it as itExtra } from "./locales/it";
+import { ja as jaExtra } from "./locales/ja";
+import { ko as koExtra } from "./locales/ko";
+import { nl as nlExtra } from "./locales/nl";
+import { pt as ptExtra } from "./locales/pt";
+import type { Extra } from "./locales/types";
+import { zh as zhExtra } from "./locales/zh";
+
 export const en = {
   common: {
     save: "Save",
@@ -96,6 +111,37 @@ export const en = {
       "All of your cloud data — streak, flags, wins, badges and letters — will be deleted permanently. Confirm with your password to continue.",
     deleteForever: "Delete forever",
     yourPassword: "Your password",
+    sendTest: "Send a test notification",
+    testSent: "Test push sent to your device.",
+    testSentLocal: "Sent a local test notification — remote push isn't configured yet.",
+    testFailed: "Couldn't send a test notification on this device.",
+    notificationsOn: "Reminders are on.",
+    notificationsOnDevice: "Notifications are on for this device.",
+    notificationsOff: "Notifications turned off.",
+    permissionDenied:
+      "Notifications are blocked. You can turn them on any time from your device settings.",
+    deleteBody1:
+      "Deleting your account will permanently remove all data associated with your account from our servers. This action cannot be undone.",
+    deleteBody2:
+      "If you simply don't want to use the app right now and may return later, you can safely uninstall the app instead. Your account and progress will remain available when you sign back in.",
+    typeDelete: 'Type "delete" to confirm',
+    deleteConfirmTitle: "Delete your account?",
+    deleteConfirmDesc:
+      "This action is permanent and cannot be undone. Are you sure you want to delete your account?",
+    keepAccount: "Keep account",
+    deletedTitle: "Account deleted",
+    deletedDesc:
+      "Your account has been permanently deleted. We're sorry to see you go. If you ever decide to return, you're always welcome to create a new account.",
+    redirecting: "Redirecting to the Sign In page in {{count}} seconds...",
+  },
+  notif: {
+    daily_motivation: "Daily motivation",
+    morning: "Morning reminder (9:00)",
+    evening: "Evening reminder (20:00)",
+    milestone: "No contact milestone",
+    streak: "Streak reminder",
+    sos: "SOS encouragement",
+    inactivity: "Inactivity reminder",
   },
   home: {
     greeting: "Hi {{name}}",
@@ -249,17 +295,62 @@ export const LANGUAGES = [
 
 export type LanguageCode = (typeof LANGUAGES)[number]["code"];
 
-export const resources = {
-  en: { translation: en },
-  es: { translation: es },
-  fr: { translation: fr },
-  de: { translation: de },
-  it: { translation: it },
-  pt: { translation: pt },
-  nl: { translation: nl },
-  hi: { translation: hi },
-  bn: { translation: bn },
-  ja: { translation: ja },
-  ko: { translation: ko },
-  zh: { translation: zh },
+const base: Record<LanguageCode, Translation> = {
+  en,
+  es,
+  fr,
+  de,
+  it,
+  pt,
+  nl,
+  hi,
+  bn,
+  ja,
+  ko,
+  zh,
+};
+
+const extra: Partial<Record<LanguageCode, Extra>> = {
+  es: esExtra,
+  fr: frExtra,
+  de: deExtra,
+  it: itExtra,
+  pt: ptExtra,
+  nl: nlExtra,
+  hi: hiExtra,
+  bn: bnExtra,
+  ja: jaExtra,
+  ko: koExtra,
+  zh: zhExtra,
+};
+
+/** Shallow-per-namespace merge: a locale may override any subset of keys. */
+function mergeCatalog(...parts: Record<string, unknown>[]): Record<string, unknown> {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const part of parts) {
+    for (const [ns, values] of Object.entries(part ?? {})) {
+      out[ns] = { ...(out[ns] ?? {}), ...(values as Record<string, unknown>) };
+    }
+  }
+  return out;
+}
+
+const english = mergeCatalog(en as never, screensEn as never, uiEn as never);
+
+export const resources = Object.fromEntries(
+  LANGUAGES.map(({ code }) => [
+    code,
+    {
+      translation:
+        code === "en"
+          ? english
+          : mergeCatalog(
+              english,
+              base[code] as never,
+              (extra[code] ?? {}) as never,
+            ),
+    },
+  ]),
+) as Record<LanguageCode, { translation: Record<string, unknown> }> & {
+  en: { translation: typeof en };
 };

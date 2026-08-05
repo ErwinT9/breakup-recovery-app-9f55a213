@@ -36,24 +36,48 @@ async function localPlugin() {
   return mod.LocalNotifications;
 }
 
-export async function requestNotificationPermission(): Promise<boolean> {
+/**
+ * "unsupported" means the platform has no notification API at all (e.g. the web
+ * preview). Callers should still honour the user's preference in that case —
+ * only an explicit "denied" should block enabling notifications.
+ */
+export type PermissionStatus = "granted" | "denied" | "unsupported";
+
+export async function requestNotificationPermissionStatus(): Promise<PermissionStatus> {
   if (!isNative()) {
-    if (typeof Notification === "undefined") return false;
+    if (typeof Notification === "undefined") return "unsupported";
     try {
+      if (Notification.permission === "granted") return "granted";
       const result = await Notification.requestPermission();
-      return result === "granted";
+      return result === "granted" ? "granted" : "denied";
     } catch {
-      return false;
+      return "unsupported";
     }
   }
+  const status = await safeNative<PermissionStatus>(async () => {
+    const LocalNotifications = await localPlugin();
+    const current = await LocalNotifications.checkPermissions();
+    if (current.display === "granted") return "granted";
+    if (current.display === "denied") return "denied";
+    const next = await LocalNotifications.requestPermissions();
+    return next.display === "granted" ? "granted" : "denied";
+  }, "unsupported");
+  return status ?? "unsupported";
+}
+
+/** True when notifications may be scheduled right now. */
+export async function notificationPermissionGranted(): Promise<boolean> {
+  if (!isNative()) return typeof Notification !== "undefined" && Notification.permission === "granted";
   const granted = await safeNative(async () => {
     const LocalNotifications = await localPlugin();
     const current = await LocalNotifications.checkPermissions();
-    if (current.display === "granted") return true;
-    const status = await LocalNotifications.requestPermissions();
-    return status.display === "granted";
+    return current.display === "granted";
   }, false);
   return Boolean(granted);
+}
+
+export async function requestNotificationPermission(): Promise<boolean> {
+  return (await requestNotificationPermissionStatus()) === "granted";
 }
 
 async function ensureChannel(): Promise<void> {

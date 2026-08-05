@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, Circle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { SoftCard } from "@/components/SoftCard";
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/wins")({
 });
 
 function WinsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
@@ -100,33 +102,33 @@ function WinsScreen() {
 
   return (
     <AppShell
-      title="Wins"
-      subtitle="Every small thing counts. Log it."
+      title={t("wins.title")}
+      subtitle={t("wins.subtitle")}
       action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="icon" className="press size-11 rounded-full" aria-label="Add a win">
+            <Button size="icon" className="press size-11 rounded-full" aria-label={t("wins.addWin")}>
               <Plus className="size-5" aria-hidden />
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
             <DialogHeader>
-              <DialogTitle>Custom win</DialogTitle>
+              <DialogTitle>{t("wins.customTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="win-title">What went well?</Label>
+                <Label htmlFor="win-title">{t("wins.whatWentWell")}</Label>
                 <Input
                   id="win-title"
                   maxLength={120}
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   className="h-12 rounded-2xl"
-                  placeholder="Didn't check their profile all day"
+                  placeholder={t("wins.titlePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="win-note">How did it feel? (optional)</Label>
+                <Label htmlFor="win-note">{t("wins.howFeelOptional")}</Label>
                 <Textarea
                   id="win-note"
                   maxLength={600}
@@ -140,7 +142,7 @@ function WinsScreen() {
                 disabled={!title.trim() || add.isPending}
                 onClick={() => add.mutate({ title, note })}
               >
-                Celebrate it
+                {t("wins.celebrateIt")}
               </Button>
             </div>
           </DialogContent>
@@ -150,8 +152,8 @@ function WinsScreen() {
       <div className="space-y-6">
         <section className="space-y-3">
           <div>
-            <p className="text-sm font-semibold">Quick Wins</p>
-            <p className="text-xs text-muted-foreground">Tap to log</p>
+            <p className="text-sm font-semibold">{t("wins.quickWins")}</p>
+            <p className="text-xs text-muted-foreground">{t("wins.tapToLog")}</p>
           </div>
           {WIN_SUGGESTIONS.map((suggestion) => {
             const done = loggedTitlesToday.has(suggestion.toLowerCase());
@@ -160,7 +162,7 @@ function WinsScreen() {
                 key={suggestion}
                 type="button"
                 disabled={done || add.isPending}
-                aria-label={done ? `${suggestion} — already logged today` : `Log win: ${suggestion}`}
+                aria-label={done ? t("wins.alreadyLogged", { suggestion }) : t("wins.logWinNamed", { suggestion })}
                 className="press w-full text-left disabled:cursor-default"
                 onClick={() => add.mutate(suggestion)}
               >
@@ -181,18 +183,18 @@ function WinsScreen() {
 
         <section className="space-y-3">
           <div>
-            <p className="text-sm font-semibold">Today&apos;s Wins</p>
+            <p className="text-sm font-semibold">{t("wins.todaysWins")}</p>
             <p className="text-xs text-muted-foreground">
               {todaysWins.length === 0
-                ? "Nothing yet — tap a quick win above."
-                : `${todaysWins.length} logged today`}
+                ? t("wins.nothingYet")
+                : t("wins.loggedTodayCount", { count: todaysWins.length })}
             </p>
           </div>
           {todaysWins.length === 0 ? (
             <SoftCard className="bg-mint">
-              <p className="font-medium text-on-tint">Your first win is already here</p>
+              <p className="font-medium text-on-tint">{t("wins.firstWinHere")}</p>
               <p className="mt-1 text-sm text-on-tint/75">
-                You opened this app instead of their chat.
+                {t("wins.firstWinDesc")}
               </p>
             </SoftCard>
           ) : (
@@ -202,7 +204,7 @@ function WinsScreen() {
 
         {earlierWins.length > 0 ? (
           <section className="space-y-3">
-            <p className="text-sm font-semibold">Earlier Wins</p>
+            <p className="text-sm font-semibold">{t("wins.earlierWins")}</p>
             {earlierWins.map((win) => (
               <WinRow key={win.id} win={win} onDelete={handleDelete} />
             ))}
@@ -220,6 +222,7 @@ function WinRow({
   win: { id: string; title: string; note: string | null; achieved_on: string };
   onDelete: (id: string, title: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <SoftCard className="bg-mint flex items-start gap-3">
       <Check className="mt-0.5 size-4 shrink-0 text-on-tint" aria-hidden />
@@ -230,7 +233,7 @@ function WinRow({
       </div>
       <button
         type="button"
-        aria-label={`Delete win ${win.title}`}
+        aria-label={t("wins.deleteWin", { title: win.title })}
         className="press text-on-tint/60"
         onClick={() => onDelete(win.id, win.title)}
       >

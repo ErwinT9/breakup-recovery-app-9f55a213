@@ -243,13 +243,15 @@ export function MoreDrawer({
               <span className="text-muted-foreground">{t("drawer.version")}</span> · {APP_VERSION}
             </p>
             <p>
-              <span className="text-muted-foreground">{t("drawer.developer")}</span> · No Contact
-              Labs
+              <span className="text-muted-foreground">{t("drawer.developer")}</span> ·{" "}
+              {t("drawer.developerName", "No Contact Labs")}
             </p>
             <p>
-              <span className="text-muted-foreground">Open-source libraries</span> · React,
-              TanStack Router &amp; Query, Capacitor, Supabase JS, Radix UI, Tailwind CSS,
-              lucide-react, canvas-confetti.
+              <span className="text-muted-foreground">{t("drawer.openSourceLibraries", "Open-source libraries")}</span> ·{" "}
+              {t(
+                "drawer.openSourceList",
+                "React, TanStack Router & Query, Capacitor, Supabase JS, Radix UI, Tailwind CSS, lucide-react, canvas-confetti.",
+              )}
             </p>
             <p className="text-muted-foreground">{t("drawer.privacyNote")}</p>
           </div>

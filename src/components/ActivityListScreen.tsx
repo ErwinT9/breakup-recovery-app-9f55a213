@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { SoftCard } from "@/components/SoftCard";
@@ -46,6 +47,7 @@ export function ActivityListScreen({
   suggestions?: string[];
   emptyText: string;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
@@ -105,7 +107,7 @@ export function ActivityListScreen({
           <Input
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder={notePlaceholder ?? "Add a note (optional)"}
+            placeholder={notePlaceholder ?? t("activityList.addNoteOptional")}
             className="h-12 rounded-2xl"
           />
         ) : null}
@@ -114,7 +116,7 @@ export function ActivityListScreen({
           disabled={!main.trim() || add.isPending}
           onClick={() => add.mutate(main.trim())}
         >
-          Add
+          {t("activityList.add")}
         </Button>
       </SoftCard>
 
@@ -157,7 +159,7 @@ export function ActivityListScreen({
             </div>
             <button
               type="button"
-              aria-label="Delete"
+              aria-label={t("activityList.delete")}
               onClick={() => {
                 haptic.light();
                 remove.mutate(item.id);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { activity } from "@/lib/badgeActivity";
@@ -8,16 +9,17 @@ import { cn } from "@/lib/utils";
 
 const DURATION = 60;
 const TINTS = ["bg-bubble-1", "bg-bubble-2", "bg-bubble-3", "bg-bubble-4", "bg-bubble-5"];
-const ENCOURAGEMENTS = [
-  "Keep going.",
-  "You're doing great.",
-  "Stay with this moment.",
-  "Breathe. You're safe here.",
-  "This feeling is passing.",
+const ENCOURAGEMENT_KEYS = [
+  "popit.encouragement1",
+  "popit.encouragement2",
+  "popit.encouragement3",
+  "popit.encouragement4",
+  "popit.encouragement5",
 ];
 
 /** Calming, non-competitive pop-it. Full-screen, ~60 seconds. */
 export function PopIt({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation();
   const [left, setLeft] = useState(DURATION);
   const [popped, setPopped] = useState<Record<number, boolean>>({});
   const [count, setCount] = useState(0);
@@ -41,7 +43,8 @@ export function PopIt({ onDone }: { onDone: () => void }) {
     recorded.current = true;
     activity.popItCompleted();
   }, [finished]);
-  const message = ENCOURAGEMENTS[Math.floor((DURATION - left) / 12) % ENCOURAGEMENTS.length];
+  const messageKey = ENCOURAGEMENT_KEYS[Math.floor((DURATION - left) / 12) % ENCOURAGEMENT_KEYS.length] as string;
+  const message = t(messageKey);
 
   const pop = (index: number) => {
     if (finished) return;
@@ -57,12 +60,12 @@ export function PopIt({ onDone }: { onDone: () => void }) {
   if (finished) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16 text-center animate-fade-in">
-        <p className="text-2xl font-semibold">You made it through this moment.</p>
+        <p className="text-2xl font-semibold">{t("popit.madeThrough")}</p>
         <p className="text-sm text-muted-foreground">
-          {count} {count === 1 ? "pop" : "pops"} — and the urge is quieter than it was.
+          {count} {count === 1 ? t("popit.pop") : t("popit.popsPlural")} — {t("popit.quieter")}
         </p>
         <Button className="press mt-2 h-12 rounded-2xl px-8" onClick={onDone}>
-          Return Home
+          {t("popit.returnHome")}
         </Button>
       </div>
     );
@@ -71,7 +74,7 @@ export function PopIt({ onDone }: { onDone: () => void }) {
   return (
     <div className="flex flex-col items-center py-2">
       <div className="flex w-full items-center justify-between px-1">
-        <p className="text-sm text-muted-foreground">Popped</p>
+        <p className="text-sm text-muted-foreground">{t("popit.popped")}</p>
         <p className="text-sm font-medium tabular-nums">
           0:{String(left).padStart(2, "0")}
         </p>
@@ -83,7 +86,7 @@ export function PopIt({ onDone }: { onDone: () => void }) {
           <button
             key={index}
             type="button"
-            aria-label="Pop"
+            aria-label={t("popit.popAria")}
             onPointerDown={() => pop(index)}
             className={cn(
               "aspect-square rounded-full ring-1 ring-black/5 transition-transform duration-200 ease-out",
@@ -116,7 +119,7 @@ export function PopIt({ onDone }: { onDone: () => void }) {
             setAffirmationKey((k) => k + 1);
           }}
         >
-          Tap to Affirm
+          {t("popit.tapToAffirm")}
         </Button>
       </div>
     </div>

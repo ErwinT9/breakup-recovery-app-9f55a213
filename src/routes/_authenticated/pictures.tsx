@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ImagePlus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { SoftCard } from "@/components/SoftCard";
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/pictures")({
 });
 
 function Pictures() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
@@ -73,7 +75,7 @@ function Pictures() {
       queryClient.setQueryData(["pictures", userId], next);
       setCaption("");
       haptic.success();
-      toast.success("Saved to your private album.");
+      toast.success(t("pictures.savedToAlbum"));
     },
     onError: (error) => toast.error(humanizeError(error)),
   });
@@ -88,12 +90,12 @@ function Pictures() {
   });
 
   return (
-    <AppShell title="Pictures" subtitle="A private album, visible only to you">
+    <AppShell title={t("pictures.title")} subtitle={t("pictures.subtitle")}>
       <SoftCard className="space-y-3">
         <Input
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
-          placeholder="Caption (optional)"
+          placeholder={t("pictures.captionPlaceholder")}
           className="h-12 rounded-2xl"
         />
         <input
@@ -116,13 +118,13 @@ function Pictures() {
           }}
         >
           <ImagePlus className="mr-2 size-4" aria-hidden />
-          {upload.isPending ? "Uploading…" : "Add a picture"}
+          {upload.isPending ? t("pictures.uploading") : t("pictures.addPicture")}
         </Button>
       </SoftCard>
 
       {rows.length === 0 ? (
         <p className="mt-5 px-1 text-sm text-muted-foreground">
-          No pictures yet — add one that reminds you of your own life.
+          {t("pictures.noPictures")}
         </p>
       ) : (
         <ul className="mt-5 grid grid-cols-2 gap-3">
@@ -131,7 +133,7 @@ function Pictures() {
               {signed.data?.[picture.image_url] ? (
                 <img
                   src={signed.data[picture.image_url]}
-                  alt={picture.caption ?? "Saved picture"}
+                  alt={picture.caption ?? t("pictures.savedPicture")}
                   loading="lazy"
                   className="aspect-square w-full object-cover"
                 />
@@ -144,7 +146,7 @@ function Pictures() {
                 </p>
                 <button
                   type="button"
-                  aria-label="Delete picture"
+                  aria-label={t("pictures.deletePicture")}
                   onClick={() => remove.mutate({ id: picture.id, path: picture.image_url })}
                   className="press text-muted-foreground"
                 >

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { ActivityListScreen } from "@/components/ActivityListScreen";
 import { ritualRepo } from "@/data/repository";
@@ -12,18 +13,21 @@ export const Route = createFileRoute("/_authenticated/rituals")({
       { property: "og:description", content: "Build the routine that carries you through no contact." },
     ],
   }),
-  component: () => (
-    <ActivityListScreen
-      title="Rituals"
-      subtitle="The small routines that hold you up"
-      cacheKey="rituals"
-      repo={ritualRepo}
-      mainField="title"
-      mainPlaceholder="Morning walk without my phone"
-      noteField="note"
-      notePlaceholder="Why it helps (optional)"
-      suggestions={["Morning walk", "Journal before bed", "Phone away after 9pm"]}
-      emptyText="No rituals yet — add one you can repeat tomorrow."
-    />
-  ),
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <ActivityListScreen
+        title={t("rituals.title")}
+        subtitle={t("rituals.subtitle")}
+        cacheKey="rituals"
+        repo={ritualRepo}
+        mainField="title"
+        mainPlaceholder={t("rituals.mainPlaceholder")}
+        noteField="note"
+        notePlaceholder={t("rituals.notePlaceholder")}
+        suggestions={t("rituals.suggestions", { returnObjects: true }) as string[]}
+        emptyText={t("rituals.emptyText")}
+      />
+    );
+  },
 });

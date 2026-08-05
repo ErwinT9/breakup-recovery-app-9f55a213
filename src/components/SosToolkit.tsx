@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { CircleDot, Flag as FlagIcon, Mail, Sparkles, Trophy, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { SoftCard } from "@/components/SoftCard";
 import { PopIt } from "@/components/PopIt";
@@ -17,51 +18,6 @@ import { sosEncouragement } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 type Tool = "menu" | "breathe" | "ground" | "flags" | "wins" | "letters" | "words" | "urge";
-
-const HEADERS: Record<Tool, { title: string; subtitle: string }> = {
-  menu: {
-    title: "Emergency toolkit",
-    subtitle:
-      "Most urges pass if you give them a little time. Let's get through this together.",
-  },
-  breathe: {
-    title: "Guided Breathing",
-    subtitle: "Slow your breathing and let your body settle.",
-  },
-  ground: {
-    title: "Ground Yourself",
-    subtitle: "Reconnect with the present moment using your senses.",
-  },
-  flags: {
-    title: "Remember Why You Left",
-    subtitle: "Read the reasons that helped you choose yourself.",
-  },
-  wins: {
-    title: "Celebrate Your Progress",
-    subtitle: "Every small victory is proof that you're moving forward.",
-  },
-  letters: {
-    title: "Your Unsent Letters",
-    subtitle: "Read your thoughts without reopening old wounds.",
-  },
-  words: {
-    title: "Words That Help",
-    subtitle: "A few lines to hold onto right now.",
-  },
-  urge: {
-    title: "Ride Out the Urge",
-    subtitle: "Stay present for one minute. The urge will pass.",
-  },
-};
-
-const MENU: { key: Tool; label: string; hint: string; icon: typeof Wind; tint: string }[] = [
-  { key: "breathe", label: "Breathe", hint: "60 seconds, guided", icon: Wind, tint: "bg-sky" },
-  { key: "ground", label: "5-4-3-2-1", hint: "Come back to now", icon: Sparkles, tint: "bg-lavender" },
-  { key: "flags", label: "Read my flags", hint: "Why you left", icon: FlagIcon, tint: "bg-coral" },
-  { key: "wins", label: "Read my wins", hint: "How far you've come", icon: Trophy, tint: "bg-mint" },
-  { key: "letters", label: "My letters", hint: "Say it here instead", icon: Mail, tint: "bg-lavender" },
-  { key: "urge", label: "Fight the Urge", hint: "Ride it out", icon: CircleDot, tint: "bg-mint" },
-];
 
 function useCountdown(seconds: number, active: boolean) {
   const [left, setLeft] = useState(seconds);
@@ -81,9 +37,30 @@ export function SosToolkit({
   open: boolean;
   onOpenChange: (next: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const [tool, setTool] = useState<Tool>("menu");
+
+  const HEADERS: Record<Tool, { title: string; subtitle: string }> = {
+    menu: { title: t("sos.menuTitle"), subtitle: t("sos.menuSubtitle") },
+    breathe: { title: t("sos.breatheTitle"), subtitle: t("sos.breatheSubtitle") },
+    ground: { title: t("sos.groundTitle"), subtitle: t("sos.groundSubtitle") },
+    flags: { title: t("sos.flagsTitle"), subtitle: t("sos.flagsSubtitle") },
+    wins: { title: t("sos.winsTitle"), subtitle: t("sos.winsSubtitle") },
+    letters: { title: t("sos.lettersTitle"), subtitle: t("sos.lettersSubtitle") },
+    words: { title: t("sos.wordsTitle"), subtitle: t("sos.wordsSubtitle") },
+    urge: { title: t("sos.urgeTitle"), subtitle: t("sos.urgeSubtitle") },
+  };
+
+  const MENU: { key: Tool; label: string; hint: string; icon: typeof Wind; tint: string }[] = [
+    { key: "breathe", label: t("sos.breathe"), hint: t("sos.breatheHint"), icon: Wind, tint: "bg-sky" },
+    { key: "ground", label: t("sos.ground"), hint: t("sos.groundHint"), icon: Sparkles, tint: "bg-lavender" },
+    { key: "flags", label: t("sos.flags"), hint: t("sos.flagsHint"), icon: FlagIcon, tint: "bg-coral" },
+    { key: "wins", label: t("sos.wins"), hint: t("sos.winsHint"), icon: Trophy, tint: "bg-mint" },
+    { key: "letters", label: t("sos.letters"), hint: t("sos.lettersHint"), icon: Mail, tint: "bg-lavender" },
+    { key: "urge", label: t("sos.urge"), hint: t("sos.urgeHint"), icon: CircleDot, tint: "bg-mint" },
+  ];
 
   useEffect(() => {
     if (open) {
@@ -155,7 +132,7 @@ export function SosToolkit({
               setTool("menu");
             }}
           >
-            ← All tools
+            {t("sos.allTools")}
           </Button>
         ) : null}
 
@@ -183,11 +160,8 @@ export function SosToolkit({
                 ))}
               </div>
               <SoftCard className="bg-mint">
-                <p className="text-sm font-semibold">Don't text your ex</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Nothing they could say right now would feel as good as waking up tomorrow with
-                  your streak intact.
-                </p>
+                <p className="text-sm font-semibold">{t("sos.dontText")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t("sos.dontTextBody")}</p>
               </SoftCard>
             </>
           ) : null}
@@ -196,11 +170,11 @@ export function SosToolkit({
             <SoftCard className="flex flex-col items-center py-10">
               <div className="animate-breathe flex size-40 items-center justify-center rounded-full bg-mint">
                 <span className="text-sm font-medium text-on-tint">
-                  {breatheLeft % 8 < 4 ? "Breathe in" : "Breathe out"}
+                  {breatheLeft % 8 < 4 ? t("sos.breatheIn") : t("sos.breatheOut")}
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold tabular-nums">{breatheLeft}s</p>
-              <p className="mt-1 text-sm text-muted-foreground">Follow the circle. In 4, out 4.</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("sos.breatheFollow")}</p>
             </SoftCard>
           ) : null}
 
@@ -224,9 +198,7 @@ export function SosToolkit({
             <div className="space-y-3">
               {(flags.data ?? []).length === 0 ? (
                 <SoftCard>
-                  <p className="text-sm text-muted-foreground">
-                    No flags yet. Add a few on the Flags tab so future you has this list.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("sos.noFlagsYet")}</p>
                 </SoftCard>
               ) : (
                 (flags.data ?? []).map((flag) => (
@@ -243,7 +215,7 @@ export function SosToolkit({
             <div className="space-y-3">
               {(wins.data ?? []).length === 0 ? (
                 <SoftCard>
-                  <p className="text-sm text-muted-foreground">Log your first win on the Wins tab.</p>
+                  <p className="text-sm text-muted-foreground">{t("sos.noWinsYet")}</p>
                 </SoftCard>
               ) : (
                 (wins.data ?? []).map((win) => (
@@ -260,14 +232,12 @@ export function SosToolkit({
             <div className="space-y-3">
               {(letters.data ?? []).length === 0 ? (
                 <SoftCard>
-                  <p className="text-sm text-muted-foreground">
-                    Write what you want to send — into a letter they'll never read.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("sos.noLettersYet")}</p>
                 </SoftCard>
               ) : (
                 (letters.data ?? []).map((letter) => (
                   <SoftCard key={letter.id}>
-                    <p className="font-medium">{letter.title ?? "Untitled letter"}</p>
+                    <p className="font-medium">{letter.title ?? t("sos.untitledLetter")}</p>
                     <p className="mt-1 line-clamp-4 text-sm text-muted-foreground">{letter.body}</p>
                   </SoftCard>
                 ))

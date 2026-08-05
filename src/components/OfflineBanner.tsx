@@ -1,8 +1,10 @@
 import { CloudOff, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export function OfflineBanner() {
+  const { t } = useTranslation();
   const { online, pending } = useNetworkStatus();
 
   if (online && pending === 0) return null;
@@ -18,11 +20,7 @@ export function OfflineBanner() {
       ) : (
         <CloudOff className="size-4 shrink-0" aria-hidden />
       )}
-      <p>
-        {online
-          ? `Syncing ${pending} saved change${pending === 1 ? "" : "s"}…`
-          : "Offline — everything is saved on this device and syncs later."}
-      </p>
+      <p>{online ? t("offlineBanner.syncing", { count: pending }) : t("offlineBanner.offline")}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, HeartHandshake, Mail, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -88,6 +89,7 @@ function capitalizeName(name: string): string {
 }
 
 function HomeScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const navigate = useNavigate();
@@ -156,7 +158,7 @@ function HomeScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["mood-today", userId] });
-      toast("Check-in cleared. You can check in again.");
+      toast(t("home.checkinCleared"));
     },
     onError: (error) => toast.error(humanizeError(error)),
   });
@@ -190,7 +192,7 @@ function HomeScreen() {
     onSuccess: async () => {
       haptic.warning();
       analytics.track("streak_reset", { days });
-      toast("Your streak has been reset. Today is a new beginning.");
+      toast(t("home.streakResetToast"));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["streak", userId] }),
         queryClient.invalidateQueries({ queryKey: ["badges", userId] }),
@@ -221,11 +223,11 @@ function HomeScreen() {
 
   return (
     <AppShell
-      title={name ? `Hi ${name}` : "Welcome"}
+      title={name ? t("home.greeting", { name }) : t("home.welcome")}
       leading={
         <button
           type="button"
-          aria-label="Open Profile"
+          aria-label={t("home.openProfile")}
           onClick={() => {
             haptic.light();
             void navigate({ to: "/profile" });
@@ -238,7 +240,7 @@ function HomeScreen() {
       action={
         <button
           type="button"
-          aria-label="Switch Theme"
+          aria-label={t("home.switchTheme")}
           onClick={() => {
             haptic.select();
             theme.toggle();
@@ -262,9 +264,9 @@ function HomeScreen() {
         <SoftCard className="bg-mint px-5 py-3 text-center">
           <FireflyJar days={elapsed.days} dailyProgress={dayProgress} />
           <div className="mt-1 flex items-center justify-center gap-6 text-on-tint">
-            <Unit value={elapsed.hours} label="hrs" />
-            <Unit value={elapsed.minutes} label="min" />
-            <Unit value={elapsed.seconds} label="sec" />
+            <Unit value={elapsed.hours} label={t("home.hrs")} />
+            <Unit value={elapsed.minutes} label={t("home.min")} />
+            <Unit value={elapsed.seconds} label={t("home.sec")} />
           </div>
         </SoftCard>
 
@@ -276,13 +278,13 @@ function HomeScreen() {
           <Link to="/flags" className="press">
             <SoftCard className="bg-coral h-full text-center">
               <p className="text-2xl font-semibold text-on-tint">{flags.data?.length ?? 0}</p>
-              <p className="text-xs text-on-tint/70">Flags</p>
+              <p className="text-xs text-on-tint/70">{t("nav.flags")}</p>
             </SoftCard>
           </Link>
           <Link to="/wins" className="press">
             <SoftCard className="bg-mint h-full text-center">
               <p className="text-2xl font-semibold text-on-tint">{wins.data?.length ?? 0}</p>
-              <p className="text-xs text-on-tint/70">Wins</p>
+              <p className="text-xs text-on-tint/70">{t("nav.wins")}</p>
             </SoftCard>
           </Link>
           <Link to="/badges" className="press">
@@ -290,7 +292,7 @@ function HomeScreen() {
               <p className="text-2xl font-semibold text-on-tint">
                 {badgeState.unlockedCount}
               </p>
-              <p className="text-xs text-on-tint/70">Badges</p>
+              <p className="text-xs text-on-tint/70">{t("nav.badges")}</p>
             </SoftCard>
           </Link>
         </div>
@@ -301,9 +303,9 @@ function HomeScreen() {
               <Mail className="size-5 text-on-tint" aria-hidden />
             </span>
             <div className="flex-1">
-              <p className="font-medium">Unsent letters</p>
+              <p className="font-medium">{t("home.unsentLetters")}</p>
               <p className="text-sm text-muted-foreground">
-                Say everything — without sending it.
+                {t("home.unsentLettersDesc")}
               </p>
             </div>
             <ArrowRight className="size-5 text-muted-foreground" aria-hidden />
@@ -324,7 +326,7 @@ function HomeScreen() {
           <SoftCard className="animate-rise space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs tracking-wide text-muted-foreground uppercase">Today's mood</p>
+                <p className="text-xs tracking-wide text-muted-foreground uppercase">{t("home.todaysMood")}</p>
                 <p className="mt-1 font-medium">
                   <span aria-hidden>{checkinMood?.emoji ?? "🫶"}</span>{" "}
                   {checkinMood?.label ?? checkin.mood}
@@ -332,7 +334,7 @@ function HomeScreen() {
               </div>
               <div>
                 <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                  Today's intention
+                  {t("home.todaysIntention")}
                 </p>
                 <p className="mt-1 font-medium">
                   {checkinAction ? (
@@ -349,7 +351,7 @@ function HomeScreen() {
               <p className="text-sm text-muted-foreground">{checkin.custom_intention}</p>
             ) : null}
             <p className="text-sm text-muted-foreground">
-              Completed at{" "}
+              {t("home.completedAt")}{" "}
               {new Date(checkin.completed_at).toLocaleTimeString([], {
                 hour: "numeric",
                 minute: "2-digit",
@@ -364,7 +366,7 @@ function HomeScreen() {
                   setCheckInOpen(true);
                 }}
               >
-                View today's check-in
+                {t("home.viewCheckin")}
               </Button>
               <Button
                 variant="ghost"
@@ -372,7 +374,7 @@ function HomeScreen() {
                 disabled={resetCheckIn.isPending}
                 onClick={() => resetCheckIn.mutate()}
               >
-                Reset
+                {t("reset.action")}
               </Button>
             </div>
           </SoftCard>
@@ -383,9 +385,9 @@ function HomeScreen() {
                 <HeartHandshake className="size-5 text-on-tint" aria-hidden />
               </span>
               <div className="flex-1">
-                <p className="font-medium">🫶 Daily Mood Check-In</p>
+                <p className="font-medium">🫶 {t("home.dailyMoodCheckin")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Pause for a minute. Check in with yourself.
+                  {t("home.pauseForMinute")}
                 </p>
               </div>
             </div>
@@ -396,7 +398,7 @@ function HomeScreen() {
                 setCheckInOpen(true);
               }}
             >
-              Check In
+              {t("home.checkInBtn")}
             </Button>
           </SoftCard>
         )}
@@ -440,30 +442,29 @@ function HomeScreen() {
                 className="press h-12 w-full rounded-2xl"
                 onClick={() => haptic.light()}
               >
-                <AlertTriangle className="size-4" aria-hidden />I broke no contact
+                <AlertTriangle className="size-4" aria-hidden />{t("home.iBrokeNoContact")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-3xl">
               <AlertDialogHeader>
-                <AlertDialogTitle>Reset No Contact?</AlertDialogTitle>
+                <AlertDialogTitle>{t("home.resetDialogTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will reset your current streak back to Day 0. This action cannot be undone.
-                  Are you sure you want to continue? Your best streak of{" "}
-                  {Math.max(streak.data?.best_days ?? 0, days)} days is kept.
+                  {t("home.resetDialogDescPart1")}{" "}
+                  {t("home.resetDialogDescPart2", { days: Math.max(streak.data?.best_days ?? 0, days) })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+                <AlertDialogCancel className="rounded-2xl">{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction
                   className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={() => reset.mutate()}
                 >
-                  Yes, Reset Streak
+                  {t("home.yesResetStreak")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <p className="text-center text-xs text-muted-foreground">Resets your streak to Day 0</p>
+          <p className="text-center text-xs text-muted-foreground">{t("home.resetsToDay0")}</p>
         </div>
       </div>
     </AppShell>

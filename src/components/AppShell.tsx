@@ -52,7 +52,7 @@ export function AppShell({
       <header className="flex items-start gap-3 px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
         <button
           type="button"
-          aria-label="Open menu"
+          aria-label={t("shell.openMenu", "Open menu")}
           aria-haspopup="dialog"
           onClick={() => {
             haptic.select();
@@ -79,7 +79,7 @@ export function AppShell({
           haptic.heavy();
           setSosOpen(true);
         }}
-        aria-label="Open emergency toolkit"
+        aria-label={t("shell.openSos", "Open emergency toolkit")}
         className="press fixed bottom-28 right-[max(1.25rem,calc(50%-11rem))] z-50 flex size-14 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-[var(--shadow-lift)]"
       >
         <LifeBuoy className="size-6" aria-hidden />
