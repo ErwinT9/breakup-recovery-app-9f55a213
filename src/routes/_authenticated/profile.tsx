@@ -9,14 +9,13 @@ import {
   Download,
   Globe,
   Image as ImageIcon,
-  LogOut,
-  Mail,
   RefreshCw,
-  ShieldCheck,
   Trash2,
+  Upload,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { SoftCard } from "@/components/SoftCard";
@@ -49,8 +48,11 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
+import { pickAvatar } from "@/lib/avatar";
+import { LANGUAGES, setLanguage, type LanguageCode } from "@/lib/i18n";
 import { haptic } from "@/lib/native/haptics";
 import { storage } from "@/lib/native/storage";
+import { toastOnce } from "@/lib/toastOnce";
 import {
   DEFAULT_NOTIFICATION_PREFS,
   NOTIFICATION_CATEGORIES,
@@ -104,30 +106,29 @@ function Row({
 }
 
 function SettingsScreen() {
+  const { t, i18n } = useTranslation();
   const { user, signOut } = useAuth();
   const userId = user?.id ?? "";
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { online, pending } = useNetworkStatus();
-  const { isPremium, restore, busy } = useSubscription();
+  const { isPremium } = useSubscription();
 
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
   const [recovery, setRecovery] = useState("");
-  const [language, setLanguage] = useState("en");
   const [notifs, setNotifs] = useState<NotifPrefs>(DEFAULT_NOTIFS);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [logoutOpen, setLogoutOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     analytics.screen("settings");
     void loadNotificationPrefs().then(setNotifs);
-    void storage.get<string>("nc:language", "en").then(setLanguage);
     void storage.get<string | null>("nc:last-sync", null).then(setLastSync);
   }, []);
 
