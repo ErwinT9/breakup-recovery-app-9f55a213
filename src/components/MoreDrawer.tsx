@@ -197,15 +197,13 @@ export function MoreDrawer({
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Reset Streak?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently reset your No Contact timer.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("reset.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("reset.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-2xl">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction className="rounded-2xl" onClick={() => setDateOpen(true)}>
-              Reset
+              {t("reset.action")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -214,9 +212,9 @@ export function MoreDrawer({
       <Dialog open={dateOpen} onOpenChange={setDateOpen}>
         <DialogContent className="rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Pick your new start</DialogTitle>
+            <DialogTitle>{t("reset.pickNew")}</DialogTitle>
           </DialogHeader>
-          <Label htmlFor="reset-date">No contact since</Label>
+          <Label htmlFor="reset-date">{t("reset.since")}</Label>
           <Input
             id="reset-date"
             type="datetime-local"
@@ -230,7 +228,7 @@ export function MoreDrawer({
             disabled={applyDate.isPending}
             onClick={() => applyDate.mutate(new Date(newDate).toISOString())}
           >
-            Save new date
+            {t("reset.saveNewDate")}
           </Button>
         </DialogContent>
       </Dialog>
@@ -238,27 +236,40 @@ export function MoreDrawer({
       <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
         <DialogContent className="rounded-3xl">
           <DialogHeader>
-            <DialogTitle>About</DialogTitle>
+            <DialogTitle>{t("drawer.about")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p>
-              <span className="text-muted-foreground">Version</span> · {APP_VERSION}
+              <span className="text-muted-foreground">{t("drawer.version")}</span> · {APP_VERSION}
             </p>
             <p>
-              <span className="text-muted-foreground">Developer</span> · No Contact Labs
+              <span className="text-muted-foreground">{t("drawer.developer")}</span> · No Contact
+              Labs
             </p>
             <p>
               <span className="text-muted-foreground">Open-source libraries</span> · React,
               TanStack Router &amp; Query, Capacitor, Supabase JS, Radix UI, Tailwind CSS,
               lucide-react, canvas-confetti.
             </p>
-            <p className="text-muted-foreground">
-              Privacy commitment: your flags, wins and letters are stored on your device first and
-              only synced to your private account. We never sell or share your data.
-            </p>
+            <p className="text-muted-foreground">{t("drawer.privacyNote")}</p>
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.logOut")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("common.logOutQuestion")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-2xl">{t("common.cancel")}</AlertDialogCancel>
+            <Button className="rounded-2xl" onClick={() => void logOut()}>
+              {t("common.logOut")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
