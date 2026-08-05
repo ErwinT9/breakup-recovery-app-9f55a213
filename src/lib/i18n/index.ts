@@ -53,7 +53,7 @@ function storedLanguage(): LanguageCode | null {
 if (!i18n.isInitialized) {
   // Synchronous init (initImmediate: false) so the very first render already
   // has translations — otherwise components would flash raw keys.
-  void i18n.use(initReactI18next).init({
+  const initOptions = {
     resources,
     lng: storedLanguage() ?? deviceLanguage(),
     fallbackLng: "en",
@@ -61,10 +61,12 @@ if (!i18n.isInitialized) {
     nonExplicitSupportedLngs: true,
     initImmediate: false,
     react: { useSuspense: false },
-    parseMissingKeyHandler: (key) => lookupEnglish(key) ?? key.split(".").pop() ?? key,
+    parseMissingKeyHandler: (key: string) => lookupEnglish(key) ?? key.split(".").pop() ?? key,
     interpolation: { escapeValue: false },
     returnNull: false,
-  });
+  };
+
+  void i18n.use(initReactI18next).init(initOptions as Parameters<typeof i18n.init>[0]);
 
   // Native builds keep the preference in Capacitor Preferences, which is async.
   void storage.get<string | null>(LANGUAGE_KEY, null).then((value) => {
