@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { cleanAuthFragment, waitForOAuthSession } from "@/lib/auth/oauthHash";
+import { setNativeOAuthHandlers, signInWithGoogle } from "@/lib/auth/oauthNative";
 import { haptic } from "@/lib/native/haptics";
 
 export const Route = createFileRoute("/auth")({
@@ -61,17 +62,25 @@ function AuthScreen() {
     if (session) void navigate({ to: "/home", replace: true });
   }, [session, navigate]);
 
+  useEffect(() => {
+    setNativeOAuthHandlers({
+      onError: (message) => {
+        setBusy(false);
+        toast.error(message);
+      },
+      onPendingChange: (pending) => setBusy(pending),
+    });
+    return () => setNativeOAuthHandlers({});
+  }, []);
+
   const google = async () => {
     haptic.light();
     setBusy(true);
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth` },
-    });
-    setBusy(false);
+    const { error: oauthError } = await signInWithGoogle();
     if (oauthError) {
+      setBusy(false);
       cleanAuthFragment();
-      toast.error(humanizeError(oauthError));
+      toast.error(humanizeError(new Error(oauthError)));
     }
   };
 
