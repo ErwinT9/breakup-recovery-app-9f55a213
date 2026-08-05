@@ -16,6 +16,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { installGlobalErrorHandlers } from "@/lib/analytics";
 import { migrateAppState } from "@/lib/appState/migrate";
+import { initNativeOAuthListeners } from "@/lib/auth/oauthNative";
 import { initTheme } from "@/lib/theme";
 import "@/lib/i18n";
 import { startNetworkWatcher } from "@/lib/offline/network";
@@ -147,6 +148,7 @@ function RootComponent() {
   useEffect(() => {
     installGlobalErrorHandlers();
     void migrateAppState();
+    initNativeOAuthListeners();
     startNetworkWatcher();
     startSyncEngine();
     return initTheme();

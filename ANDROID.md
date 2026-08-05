@@ -118,3 +118,24 @@ and `@revenuecat/purchases-capacitor`.
 | Blank white screen | web assets missing — rerun `build:mobile` then `sync:android` |
 | Push not received | `google-services.json` missing or package mismatch |
 | Gradle JVM errors | set Gradle JDK to 21 in Android Studio settings |
+
+## Google Sign-In on Android (deep link)
+
+The APK does not use the web redirect. `signInWithOAuth` is called with
+`skipBrowserRedirect` and the URL is opened in a Custom Tab; Supabase then
+returns to the app through this deep link:
+
+```
+app.lovable.nocontacttracker://auth-callback
+```
+
+Setup:
+
+1. Supabase Dashboard -> Authentication -> URL Configuration -> Redirect URLs:
+   add `app.lovable.nocontacttracker://auth-callback`. Keep the existing
+   `https://breakup-recovery-app.lovable.app/**` entry so the web app keeps working.
+2. Run `bun run sync:android` so `@capacitor/browser` and the updated web assets
+   land in the native project, then rebuild the APK.
+
+Nothing changes in the Google Cloud console: Google still redirects to the
+Supabase callback URL; only the final hop back into the app changed.
