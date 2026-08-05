@@ -61,9 +61,13 @@ import { toastOnce } from "@/lib/toastOnce";
 import {
   DEFAULT_NOTIFICATION_PREFS,
   NOTIFICATION_CATEGORIES,
+  deactivatePushToken,
+  ensurePushChannel,
   loadNotificationPrefs,
+  registerPush,
   requestNotificationPermission,
   saveNotificationPrefs,
+  sendTestLocalNotification,
   syncReminders,
   type NotificationPrefs,
 } from "@/lib/notifications";
@@ -135,6 +139,7 @@ function SettingsScreen() {
   const [deleting, setDeleting] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cropSource, setCropSource] = useState<string | null>(null);
+  const [notifBusy, setNotifBusy] = useState(false);
 
   useEffect(() => {
     analytics.screen("settings");
@@ -189,15 +194,66 @@ function SettingsScreen() {
 
   const toggleReminders = async (enabled: boolean) => {
     haptic.select();
-    const granted = enabled ? await requestNotificationPermission() : false;
-    await update.mutateAsync({ notifications_enabled: enabled && granted });
-    await syncReminders({
-      enabled: enabled && granted,
-      morning: profile.data?.morning_reminder ?? true,
-      evening: profile.data?.evening_reminder ?? true,
-      categories: notifs,
-    });
-    if (enabled && !granted) toast("Enable notifications in your phone settings to get reminders.");
+    setNotifBusy(true);
+    try {
+      if (!enabled) {
+        await update.mutateAsync({ notifications_enabled: false });
+        await syncReminders({ enabled: false, morning: false, evening: false, categories: notifs });
+        await deactivatePushToken(userId || null);
+        return;
+      }
+
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        await update.mutateAsync({ notifications_enabled: false });
+        toast("Enable notifications in your phone settings to get reminders.");
+        return;
+      }
+
+      // Channel first, then Firebase registration, then the local schedule.
+      await ensurePushChannel();
+      const token = await registerPush(userId);
+      await update.mutateAsync({ notifications_enabled: true });
+      await syncReminders({
+        enabled: true,
+        morning: profile.data?.morning_reminder ?? true,
+        evening: profile.data?.evening_reminder ?? true,
+        categories: notifs,
+      });
+      toast.success(token ? "Notifications are on for this device." : "Reminders are on.");
+    } catch (error) {
+      toast.error(humanizeError(error));
+    } finally {
+      setNotifBusy(false);
+    }
+  };
+
+  const sendTestNotification = async () => {
+    haptic.light();
+    setNotifBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-push-notification", {
+        body: {
+          title: "Test notification",
+          body: "If you can see this, push notifications are working.",
+        },
+      });
+      if (!error && (data as { sent?: number } | null)?.sent) {
+        toast.success("Test push sent to your device.");
+        return;
+      }
+      const local = await sendTestLocalNotification();
+      toast(
+        local
+          ? "Sent a local test notification — remote push isn't configured yet."
+          : "Couldn't send a test notification on this device.",
+      );
+    } catch (error) {
+      analytics.error(error, { stage: "push_test" });
+      toast.error(humanizeError(error));
+    } finally {
+      setNotifBusy(false);
+    }
   };
 
   const saveProfile = async () => {
@@ -429,11 +485,20 @@ function SettingsScreen() {
             <Switch
               checked={profile.data?.notifications_enabled ?? false}
               onCheckedChange={(checked) => void toggleReminders(checked)}
+              disabled={notifBusy}
               aria-label={t("settings.notifications")}
             />
           </Row>
           {profile.data?.notifications_enabled ? (
             <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="press h-11 w-full rounded-2xl"
+                disabled={notifBusy}
+                onClick={() => void sendTestNotification()}
+              >
+                Send a test notification
+              </Button>
               {NOTIFICATION_CATEGORIES.filter(
                 ({ key }) => key !== "morning" && key !== "evening",
               ).map(({ key, label }) => (

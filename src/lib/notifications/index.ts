@@ -197,4 +197,32 @@ export {
   saveNotificationPrefs,
 } from "./categories";
 export type { NotificationCategory, NotificationPrefs } from "./categories";
-export { deactivatePushToken, registerPush, syncPushRegistration } from "./push";
+export {
+  currentPushToken,
+  deactivatePushToken,
+  ensurePushChannel,
+  hasPushPermission,
+  registerPush,
+  syncPushRegistration,
+} from "./push";
+
+/** Fires an immediate local notification so delivery can be verified on device. */
+export async function sendTestLocalNotification(): Promise<boolean> {
+  const ok = await safeNative(async () => {
+    const LocalNotifications = await localPlugin();
+    await ensureChannel();
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 9001,
+          channelId: CHANNEL_ID,
+          title: "Notifications are working",
+          body: "This is a test from No Contact Tracker.",
+          schedule: { at: new Date(Date.now() + 1000) },
+        },
+      ],
+    });
+    return true;
+  }, false);
+  return Boolean(ok);
+}
