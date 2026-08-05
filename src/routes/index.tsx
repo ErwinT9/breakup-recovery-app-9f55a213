@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { HeartLeaf } from "@/components/HeartLeaf";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Splash() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session, loading } = useAuth();
 
@@ -52,10 +54,10 @@ function Splash() {
         <HeartLeaf animate className="size-32" />
       </div>
       <h1 className="animate-rise mt-10 text-2xl font-semibold tracking-tight">
-        No Contact Tracker
+        {t("landing.title", "No Contact Tracker")}
       </h1>
       <p className="text-sm font-medium tracking-[0.3em] text-muted-foreground uppercase">
-        Breakup Reset
+        {t("landing.subtitle", "Breakup Reset")}
       </p>
       <p className="animate-rise mt-6 max-w-xs text-sm text-muted-foreground">{TAGLINE}</p>
     </div>

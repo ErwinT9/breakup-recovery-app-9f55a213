@@ -12,14 +12,18 @@ export type NotificationCategory =
 
 export type NotificationPrefs = Record<NotificationCategory, boolean>;
 
-export const NOTIFICATION_CATEGORIES: { key: NotificationCategory; label: string }[] = [
-  { key: "daily_motivation", label: "Daily motivation" },
-  { key: "morning", label: "Morning reminder (9:00)" },
-  { key: "evening", label: "Evening reminder (20:00)" },
-  { key: "milestone", label: "No contact milestone" },
-  { key: "streak", label: "Streak reminder" },
-  { key: "sos", label: "SOS encouragement" },
-  { key: "inactivity", label: "Inactivity reminder" },
+export const NOTIFICATION_CATEGORIES: {
+  key: NotificationCategory;
+  label: string;
+  labelKey: string;
+}[] = [
+  { key: "daily_motivation", label: "Daily motivation", labelKey: "notif.daily_motivation" },
+  { key: "morning", label: "Morning reminder (9:00)", labelKey: "notif.morning" },
+  { key: "evening", label: "Evening reminder (20:00)", labelKey: "notif.evening" },
+  { key: "milestone", label: "No contact milestone", labelKey: "notif.milestone" },
+  { key: "streak", label: "Streak reminder", labelKey: "notif.streak" },
+  { key: "sos", label: "SOS encouragement", labelKey: "notif.sos" },
+  { key: "inactivity", label: "Inactivity reminder", labelKey: "notif.inactivity" },
 ];
 
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {

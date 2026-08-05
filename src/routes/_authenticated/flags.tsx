@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, Circle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { SoftCard } from "@/components/SoftCard";
@@ -58,6 +59,7 @@ export const Route = createFileRoute("/_authenticated/flags")({
 });
 
 function FlagsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
@@ -107,29 +109,29 @@ function FlagsScreen() {
 
   return (
     <AppShell
-      title="Red flags"
-      subtitle="The reasons you left, in your own words."
+      title={t("flags.title")}
+      subtitle={t("flags.subtitle")}
       action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="icon" className="press size-11 rounded-full" aria-label="Add a flag">
+            <Button size="icon" className="press size-11 rounded-full" aria-label={t("flags.addFlag")}>
               <Plus className="size-5" aria-hidden />
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
             <DialogHeader>
-              <DialogTitle>Custom red flag</DialogTitle>
+              <DialogTitle>{t("flags.customTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="flag-title">What happened?</Label>
+                <Label htmlFor="flag-title">{t("flags.whatHappened")}</Label>
                 <Input
                   id="flag-title"
                   maxLength={120}
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   className="h-12 rounded-2xl"
-                  placeholder="They dismissed how I felt"
+                  placeholder={t("flags.titlePlaceholder")}
                 />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -150,7 +152,7 @@ function FlagsScreen() {
                 ))}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="flag-note">Details (optional)</Label>
+                <Label htmlFor="flag-note">{t("flags.detailsOptional")}</Label>
                 <Textarea
                   id="flag-note"
                   maxLength={600}
@@ -164,7 +166,7 @@ function FlagsScreen() {
                 disabled={!title.trim() || add.isPending}
                 onClick={() => add.mutate(undefined)}
               >
-                Save flag
+                {t("flags.saveFlag")}
               </Button>
             </div>
           </DialogContent>
@@ -174,8 +176,8 @@ function FlagsScreen() {
       <div className="space-y-6">
         <section className="space-y-3">
           <div>
-            <p className="text-sm font-semibold">Common Red Flags</p>
-            <p className="text-xs text-muted-foreground">Tap to add</p>
+            <p className="text-sm font-semibold">{t("flags.commonFlags")}</p>
+            <p className="text-xs text-muted-foreground">{t("flags.tapToAdd")}</p>
           </div>
           {FLAG_SUGGESTIONS.map((suggestion) => {
             const done = loggedTitles.has(suggestion.toLowerCase());
@@ -184,7 +186,7 @@ function FlagsScreen() {
                 key={suggestion}
                 type="button"
                 disabled={done || add.isPending}
-                aria-label={done ? `${suggestion} — already added` : `Add flag: ${suggestion}`}
+                aria-label={done ? t("flags.alreadyAdded", { suggestion }) : t("flags.addFlagNamed", { suggestion })}
                 className="press w-full text-left disabled:cursor-default"
                 onClick={() =>
                   add.mutate({
@@ -214,18 +216,18 @@ function FlagsScreen() {
 
         <section className="space-y-3">
           <div>
-            <p className="text-sm font-semibold">My Red Flags</p>
+            <p className="text-sm font-semibold">{t("flags.myFlags")}</p>
             <p className="text-xs text-muted-foreground">
               {allFlags.length === 0
-                ? "Nothing yet — tap one above or add your own."
-                : `${allFlags.length} saved`}
+                ? t("flags.nothingYet")
+                : t("flags.savedCount", { count: allFlags.length })}
             </p>
           </div>
           {allFlags.length === 0 ? (
             <SoftCard className="bg-coral">
-              <p className="font-medium text-on-tint">Start with one honest memory</p>
+              <p className="font-medium text-on-tint">{t("flags.startHonest")}</p>
               <p className="mt-1 text-sm text-on-tint/75">
-                On day 12 at 1am, this list is what stops the text.
+                {t("flags.startHonestDesc")}
               </p>
             </SoftCard>
           ) : (
@@ -237,14 +239,14 @@ function FlagsScreen() {
                   {flag.note ? <p className="mt-1 text-sm text-on-tint/75">{flag.note}</p> : null}
                   <p className="mt-2 text-xs text-on-tint/60">
                     <span className="uppercase">
-                      {FLAG_CATEGORIES.find((item) => item.key === flag.category)?.label ?? "Other"}
+                      {FLAG_CATEGORIES.find((item) => item.key === flag.category)?.label ?? t("flags.other")}
                     </span>
                     {flag.created_at ? ` · ${formatFlagDate(flag.created_at)}` : ""}
                   </p>
                 </div>
                 <button
                   type="button"
-                  aria-label={`Delete flag ${flag.title}`}
+                  aria-label={t("flags.deleteFlag", { title: flag.title })}
                   className="press text-on-tint/60"
                   onClick={() => {
                     haptic.light();

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { BookOpen, Camera, CheckCircle2, ChevronDown, Circle, Flame } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { SoftCard } from "@/components/SoftCard";
 import { journalRepo, localDayKey, pictureRepo, triggerRepo } from "@/data/repository";
@@ -18,6 +19,7 @@ function doneToday(rows: Row[] | undefined) {
 }
 
 export function DailyTasks() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const enabled = Boolean(userId);
@@ -43,8 +45,8 @@ export function DailyTasks() {
     {
       key: "journal",
       to: "/journal" as const,
-      title: "Daily Journal",
-      subtitle: "Write about today's thoughts and feelings.",
+      title: t("tasks.journalTitle", "Daily Journal"),
+      subtitle: t("tasks.journalSubtitle", "Write about today's thoughts and feelings."),
       icon: BookOpen,
       tint: "bg-lavender",
       done: doneToday(journal.data),
@@ -52,8 +54,8 @@ export function DailyTasks() {
     {
       key: "picture",
       to: "/pictures" as const,
-      title: "Add a Picture",
-      subtitle: "Save a photo of your healing journey.",
+      title: t("tasks.pictureTitle", "Add a Picture"),
+      subtitle: t("tasks.pictureSubtitle", "Save a photo of your healing journey."),
       icon: Camera,
       tint: "bg-sky",
       done: doneToday(pictures.data),
@@ -61,8 +63,8 @@ export function DailyTasks() {
     {
       key: "trigger",
       to: "/triggers" as const,
-      title: "Log a Trigger",
-      subtitle: "Record what made you want to reach out today.",
+      title: t("tasks.triggerTitle", "Log a Trigger"),
+      subtitle: t("tasks.triggerSubtitle", "Record what made you want to reach out today."),
       icon: Flame,
       tint: "bg-coral",
       done: doneToday(triggers.data),
@@ -88,8 +90,8 @@ export function DailyTasks() {
         aria-expanded={open}
       >
         <div>
-          <p className="font-medium">Daily Tasks</p>
-          <p className="text-sm text-muted-foreground">Complete today's healing activities.</p>
+          <p className="font-medium">{t("tasks.title", "Daily Tasks")}</p>
+          <p className="text-sm text-muted-foreground">{t("tasks.subtitle", "Complete today's healing activities.")}</p>
         </div>
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
           {completed} / {tasks.length}
@@ -106,7 +108,7 @@ export function DailyTasks() {
           style={{ width: `${progress}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{completed} / {tasks.length} completed</p>
+      <p className="mt-2 text-xs text-muted-foreground">{t("tasks.completedCount", "{{completed}} / {{total}} completed", { completed, total: tasks.length })}</p>
 
       <div
         className={cn(
@@ -135,7 +137,7 @@ export function DailyTasks() {
                     {task.done ? (
                       <span className="flex items-center gap-1 text-xs font-medium text-primary">
                         <CheckCircle2 className="size-4" aria-hidden />
-                        Completed
+                        {t("tasks.completed", "Completed")}
                       </span>
                     ) : (
                       <Circle className="size-4 text-muted-foreground" aria-hidden />

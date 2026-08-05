@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export function PremiumLock({
   description: string;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   const { isPremium } = useSubscription();
 
   if (isPremium) return <>{children}</>;
@@ -27,7 +29,7 @@ export function PremiumLock({
       <h3 className="mt-3 text-base font-semibold">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       <Button asChild className="press mt-4 w-full rounded-2xl">
-        <Link to="/paywall">Start 7-day free trial</Link>
+        <Link to="/paywall">{t("premium.startTrial")}</Link>
       </Button>
     </SoftCard>
   );

@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { SoftCard } from "@/components/SoftCard";
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/letters")({
 });
 
 function LettersScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
@@ -66,7 +68,7 @@ function LettersScreen() {
       activity.featureUsed("letters");
       queryClient.setQueryData(["letters", userId], rows);
       haptic.success();
-      toast("Saved. It stays here, with you.");
+      toast(t("letters.savedToast"));
       setTitle("");
       setBody("");
       setEmotion(null);
@@ -83,29 +85,29 @@ function LettersScreen() {
 
   return (
     <AppShell
-      title="Unsent letters"
-      subtitle="Say it all. Send none of it."
+      title={t("letters.title")}
+      subtitle={t("letters.subtitle")}
       action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="icon" className="press size-11 rounded-full" aria-label="Write a letter">
+            <Button size="icon" className="press size-11 rounded-full" aria-label={t("letters.writeLetter")}>
               <Plus className="size-5" aria-hidden />
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
             <DialogHeader>
-              <DialogTitle>Write a letter</DialogTitle>
+              <DialogTitle>{t("letters.writeLetter")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="letter-title">Title (optional)</Label>
+                <Label htmlFor="letter-title">{t("letters.titleOptional")}</Label>
                 <Input
                   id="letter-title"
                   maxLength={80}
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   className="h-12 rounded-2xl"
-                  placeholder="What I never said"
+                  placeholder={t("letters.titlePlaceholder")}
                 />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -126,14 +128,14 @@ function LettersScreen() {
                 ))}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="letter-body">Your letter</Label>
+                <Label htmlFor="letter-body">{t("letters.yourLetter")}</Label>
                 <Textarea
                   id="letter-body"
                   maxLength={5000}
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   className="min-h-48 rounded-2xl"
-                  placeholder="I keep wanting to tell you..."
+                  placeholder={t("letters.bodyPlaceholder")}
                 />
               </div>
               <Button
@@ -141,7 +143,7 @@ function LettersScreen() {
                 disabled={!body.trim() || add.isPending}
                 onClick={() => add.mutate()}
               >
-                Save letter
+                {t("letters.saveLetter")}
               </Button>
             </div>
           </DialogContent>
@@ -151,16 +153,16 @@ function LettersScreen() {
       <div className="space-y-3">
         {(letters.data ?? []).length === 0 ? (
           <SoftCard className="bg-lavender">
-            <p className="font-medium text-on-tint">Nothing written yet</p>
+            <p className="font-medium text-on-tint">{t("letters.nothingWritten")}</p>
             <p className="mt-1 text-sm text-on-tint/75">
-              The urge to text is usually the urge to be heard. Be heard here.
+              {t("letters.nothingWrittenDesc")}
             </p>
           </SoftCard>
         ) : (
           (letters.data ?? []).map((letter) => (
             <SoftCard key={letter.id} className="flex items-start gap-3">
               <div className="flex-1">
-                <p className="font-medium">{letter.title ?? "Untitled letter"}</p>
+                <p className="font-medium">{letter.title ?? t("letters.untitled")}</p>
                 <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
                   {letter.body}
                 </p>
@@ -171,7 +173,7 @@ function LettersScreen() {
               </div>
               <button
                 type="button"
-                aria-label="Delete letter"
+                aria-label={t("letters.deleteLetter")}
                 className="press text-muted-foreground"
                 onClick={() => {
                   haptic.light();

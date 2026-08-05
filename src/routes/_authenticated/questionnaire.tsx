@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
@@ -35,16 +36,16 @@ export const Route = createFileRoute("/_authenticated/questionnaire")({
 
 type Answers = Partial<QuestionnaireAnswers>;
 
-const REASONS = [
-  "They lied to me",
-  "Constant arguing",
-  "I was disrespected",
-  "Cheating",
-  "They pulled away",
-  "We wanted different things",
-  "It drained me",
-  "I lost myself",
-];
+const REASON_KEYS = [
+  "lied",
+  "arguing",
+  "disrespected",
+  "cheating",
+  "pulledAway",
+  "differentThings",
+  "drainedMe",
+  "lostMyself",
+] as const;
 
 const STEPS = 12;
 
@@ -53,7 +54,7 @@ function Choice({
   value,
   onSelect,
 }: {
-  options: string[];
+  options: readonly string[];
   value?: string | null | undefined;
   onSelect: (option: string) => void;
 }) {
@@ -80,6 +81,7 @@ function Choice({
 }
 
 function Questionnaire() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -143,34 +145,35 @@ function Questionnaire() {
   };
 
   const reasons = answers.reasons ?? [];
+  const REASONS = REASON_KEYS.map((key) => t(`questionnaire.reasons.${key}`));
 
   const content = useMemo(() => {
     switch (step) {
       case 0:
         return {
-          title: "What should we call you?",
-          hint: "Only you will ever see this.",
+          title: t("questionnaire.step0.title"),
+          hint: t("questionnaire.step0.hint"),
           body: (
             <div className="space-y-3">
-              <Label htmlFor="nickname">Your name or nickname</Label>
+              <Label htmlFor="nickname">{t("questionnaire.step0.label")}</Label>
               <Input
                 id="nickname"
                 maxLength={40}
                 value={answers.nickname ?? ""}
                 onChange={(event) => set({ nickname: event.target.value })}
                 className="h-13 rounded-2xl"
-                placeholder="Alex"
+                placeholder={t("questionnaire.step0.placeholder")}
               />
             </div>
           ),
         };
       case 1:
         return {
-          title: "How old are you?",
-          hint: "This tunes the tone of your daily messages.",
+          title: t("questionnaire.step1.title"),
+          hint: t("questionnaire.step1.hint"),
           body: (
             <Choice
-              options={["Under 18", "18-24", "25-34", "35-44", "45+"]}
+              options={t("questionnaire.step1.options", { returnObjects: true }) as string[]}
               value={answers.age_range}
               onSelect={(age_range) => advance({ age_range })}
             />
@@ -178,11 +181,11 @@ function Questionnaire() {
         };
       case 2:
         return {
-          title: "How do you identify?",
-          hint: "Optional — it helps us write to you, not at you.",
+          title: t("questionnaire.step2.title"),
+          hint: t("questionnaire.step2.hint"),
           body: (
             <Choice
-              options={["Woman", "Man", "Non-binary", "Prefer not to say"]}
+              options={t("questionnaire.step2.options", { returnObjects: true }) as string[]}
               value={answers.gender}
               onSelect={(gender) => advance({ gender })}
             />
@@ -190,11 +193,11 @@ function Questionnaire() {
         };
       case 3:
         return {
-          title: "How long were you together?",
-          hint: "Longer relationships often need a longer runway.",
+          title: t("questionnaire.step3.title"),
+          hint: t("questionnaire.step3.hint"),
           body: (
             <Choice
-              options={["Under 3 months", "3-12 months", "1-3 years", "3-5 years", "5+ years"]}
+              options={t("questionnaire.step3.options", { returnObjects: true }) as string[]}
               value={answers.relationship_length}
               onSelect={(relationship_length) => advance({ relationship_length })}
             />
@@ -202,11 +205,11 @@ function Questionnaire() {
         };
       case 4:
         return {
-          title: "Who ended it?",
-          hint: "There's no wrong answer here.",
+          title: t("questionnaire.step4.title"),
+          hint: t("questionnaire.step4.hint"),
           body: (
             <Choice
-              options={["I did", "They did", "It was mutual", "It just faded"]}
+              options={t("questionnaire.step4.options", { returnObjects: true }) as string[]}
               value={answers.who_ended}
               onSelect={(who_ended) => advance({ who_ended })}
             />
@@ -214,11 +217,11 @@ function Questionnaire() {
         };
       case 5:
         return {
-          title: "When did you last have contact?",
-          hint: "Your streak timer starts from this moment.",
+          title: t("questionnaire.step5.title"),
+          hint: t("questionnaire.step5.hint"),
           body: (
             <div className="space-y-3">
-              <Label htmlFor="last-contact">Date and time</Label>
+              <Label htmlFor="last-contact">{t("questionnaire.step5.label")}</Label>
               <Input
                 id="last-contact"
                 type="datetime-local"
@@ -241,15 +244,15 @@ function Questionnaire() {
                 className="press text-sm text-primary"
                 onClick={() => set({ last_contact_at: new Date().toISOString() })}
               >
-                It was just now
+                {t("questionnaire.step5.justNow")}
               </button>
             </div>
           ),
         };
       case 6:
         return {
-          title: "Why did it end?",
-          hint: "Pick as many as fit — these become your flags.",
+          title: t("questionnaire.step6.title"),
+          hint: t("questionnaire.step6.hint"),
           body: (
             <div className="flex flex-wrap gap-2">
               {REASONS.map((reason) => {
@@ -280,11 +283,11 @@ function Questionnaire() {
         };
       case 7:
         return {
-          title: "How often do you check their socials?",
-          hint: "Honesty helps — nobody sees this.",
+          title: t("questionnaire.step7.title"),
+          hint: t("questionnaire.step7.hint"),
           body: (
             <Choice
-              options={["Many times a day", "Once a day", "A few times a week", "Rarely", "Never"]}
+              options={t("questionnaire.step7.options", { returnObjects: true }) as string[]}
               value={answers.checks_social}
               onSelect={(checks_social) => advance({ checks_social })}
             />
@@ -292,8 +295,8 @@ function Questionnaire() {
         };
       case 8:
         return {
-          title: "How hard does today feel?",
-          hint: "1 is calm, 10 is unbearable.",
+          title: t("questionnaire.step8.title"),
+          hint: t("questionnaire.step8.hint"),
           body: (
             <div className="space-y-6 py-4">
               <p className="text-center text-5xl font-semibold tabular-nums">
@@ -311,38 +314,40 @@ function Questionnaire() {
         };
       case 9:
         return {
-          title: "What's your biggest goal?",
-          hint: "We'll bring this back on the hard days.",
+          title: t("questionnaire.step9.title"),
+          hint: t("questionnaire.step9.hint"),
           body: (
             <Textarea
               maxLength={280}
               value={answers.biggest_goal ?? ""}
               onChange={(event) => set({ biggest_goal: event.target.value })}
-              placeholder="Stop checking their profile and feel like myself again."
+              placeholder={t("questionnaire.step9.placeholder")}
               className="min-h-32 rounded-3xl"
             />
           ),
         };
       case 10:
         return {
-          title: "Want gentle reminders?",
-          hint: "A morning nudge and an evening check-in. No spam, ever.",
+          title: t("questionnaire.step10.title"),
+          hint: t("questionnaire.step10.hint"),
           body: (
             <div className="space-y-3">
               <Choice
-                options={["Yes, remind me", "No thanks"]}
+                options={[t("questionnaire.step10.yes"), t("questionnaire.step10.no")]}
                 value={
                   answers.wants_reminders === null || answers.wants_reminders === undefined
                     ? null
                     : answers.wants_reminders
-                      ? "Yes, remind me"
-                      : "No thanks"
+                      ? t("questionnaire.step10.yes")
+                      : t("questionnaire.step10.no")
                 }
-                onSelect={(option) => advance({ wants_reminders: option === "Yes, remind me" })}
+                onSelect={(option) =>
+                  advance({ wants_reminders: option === t("questionnaire.step10.yes") })
+                }
               />
               <SoftCard className="bg-sky">
                 <p className="text-sm text-on-tint">
-                  Reminders are scheduled on your phone — they work even without internet.
+                  {t("questionnaire.step10.note")}
                 </p>
               </SoftCard>
             </div>
@@ -350,18 +355,18 @@ function Questionnaire() {
         };
       default:
         return {
-          title: "Last one — how did you find us?",
-          hint: "It helps us reach more people who need this.",
+          title: t("questionnaire.step11.title"),
+          hint: t("questionnaire.step11.hint"),
           body: (
             <Choice
-              options={["TikTok", "Instagram", "Google Play", "A friend", "Somewhere else"]}
+              options={t("questionnaire.step11.options", { returnObjects: true }) as string[]}
               value={answers.referral_source}
               onSelect={(referral_source) => set({ referral_source })}
             />
           ),
         };
     }
-  }, [step, answers, reasons]);
+  }, [step, answers, reasons, t]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pt-[calc(env(safe-area-inset-top)+2rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
@@ -392,7 +397,7 @@ function Questionnaire() {
             className="press h-13 rounded-2xl"
             onClick={() => setStep((current) => current - 1)}
           >
-            Back
+            {t("common.back")}
           </Button>
         ) : null}
         <Button
@@ -400,7 +405,7 @@ function Questionnaire() {
           disabled={saving}
           onClick={() => (step === STEPS - 1 ? void finish() : advance())}
         >
-          {step === STEPS - 1 ? "Start" : "Continue"}
+          {step === STEPS - 1 ? t("questionnaire.start") : t("questionnaire.continue")}
         </Button>
       </div>
     </div>

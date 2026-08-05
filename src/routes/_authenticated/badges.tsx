@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { AppShell } from "@/components/AppShell";
 import { SoftCard } from "@/components/SoftCard";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/badges")({
 });
 
 function BadgesScreen() {
+  const { t } = useTranslation();
   useEffect(() => {
     analytics.screen("badges");
   }, []);
@@ -37,7 +39,7 @@ function BadgesScreen() {
   })).filter((group) => group.items.length > 0);
 
   return (
-    <AppShell title="Badges" subtitle={`${unlockedCount} of ${total} unlocked`}>
+    <AppShell title={t("badgesScreen.title")} subtitle={t("badgesScreen.unlockedOf", { unlockedCount, total })}>
       <div className="space-y-6">
         {groups.map((group) => (
           <section key={group.category} className="space-y-3">
@@ -67,6 +69,7 @@ function BadgesScreen() {
 }
 
 function BadgeCard({ item, unlocked }: { item: BadgeProgress; unlocked: boolean }) {
+  const { t } = useTranslation();
   const { badge, current, target, ratio } = item;
   const Icon = badge.icon;
   const showProgress = !unlocked && target > 1;
@@ -110,7 +113,7 @@ function BadgeCard({ item, unlocked }: { item: BadgeProgress; unlocked: boolean 
           </div>
           <p className="mt-1.5 text-[11px] text-muted-foreground">
             {current} / {target}
-            {badge.unit ? ` ${badge.unit}` : badge.days ? " Days" : ""}
+            {badge.unit ? ` ${badge.unit}` : badge.days ? ` ${t("badgesScreen.days")}` : ""}
           </p>
         </div>
       ) : null}

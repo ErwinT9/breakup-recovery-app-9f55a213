@@ -65,7 +65,8 @@ import {
   ensurePushChannel,
   loadNotificationPrefs,
   registerPush,
-  requestNotificationPermission,
+  notificationPermissionGranted,
+  requestNotificationPermissionStatus,
   saveNotificationPrefs,
   sendTestLocalNotification,
   syncReminders,
@@ -90,6 +91,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
 
 type NotifPrefs = NotificationPrefs;
 const DEFAULT_NOTIFS: NotifPrefs = DEFAULT_NOTIFICATION_PREFS;
+const NOTIF_ENABLED_KEY = "nc:notifications-enabled";
 
 function Row({
   icon: Icon,
@@ -140,11 +142,13 @@ function SettingsScreen() {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cropSource, setCropSource] = useState<string | null>(null);
   const [notifBusy, setNotifBusy] = useState(false);
+  const [notifOn, setNotifOn] = useState(false);
 
   useEffect(() => {
     analytics.screen("settings");
     void loadNotificationPrefs().then(setNotifs);
     void storage.get<string | null>("nc:last-sync", null).then(setLastSync);
+    void storage.get<boolean>(NOTIF_ENABLED_KEY, false).then((value) => setNotifOn(Boolean(value)));
   }, []);
 
   const profile = useQuery({
@@ -168,6 +172,23 @@ function SettingsScreen() {
   useEffect(() => {
     if (streak.data?.started_at) setRecovery(streak.data.started_at.slice(0, 16));
   }, [streak.data?.started_at]);
+
+  // The switch mirrors the saved preference; if the OS permission was revoked
+  // outside the app we fall back to off so the control never lies.
+  useEffect(() => {
+    const saved = profile.data?.notifications_enabled;
+    if (saved === undefined) return;
+    if (!saved) {
+      setNotifOn(false);
+      void storage.set(NOTIF_ENABLED_KEY, false);
+      return;
+    }
+    void notificationPermissionGranted().then((granted) => {
+      // "unsupported" platforms (web preview) report false — keep the stored
+      // preference there instead of forcing the toggle off.
+      setNotifOn(granted || typeof Notification === "undefined");
+    });
+  }, [profile.data?.notifications_enabled]);
 
   const update = useMutation({
     mutationFn: async (patch: Parameters<typeof profileRepo.update>[1]) =>
@@ -195,24 +216,30 @@ function SettingsScreen() {
   const toggleReminders = async (enabled: boolean) => {
     haptic.select();
     setNotifBusy(true);
+    setNotifOn(enabled);
     try {
       if (!enabled) {
+        await storage.set(NOTIF_ENABLED_KEY, false);
         await update.mutateAsync({ notifications_enabled: false });
         await syncReminders({ enabled: false, morning: false, evening: false, categories: notifs });
         await deactivatePushToken(userId || null);
+        toast(t("settings.notificationsOff"));
         return;
       }
 
-      const granted = await requestNotificationPermission();
-      if (!granted) {
+      const status = await requestNotificationPermissionStatus();
+      if (status === "denied") {
+        setNotifOn(false);
+        await storage.set(NOTIF_ENABLED_KEY, false);
         await update.mutateAsync({ notifications_enabled: false });
-        toast("Enable notifications in your phone settings to get reminders.");
+        toast(t("settings.permissionDenied"));
         return;
       }
 
       // Channel first, then Firebase registration, then the local schedule.
       await ensurePushChannel();
       const token = await registerPush(userId);
+      await storage.set(NOTIF_ENABLED_KEY, true);
       await update.mutateAsync({ notifications_enabled: true });
       await syncReminders({
         enabled: true,
@@ -220,8 +247,9 @@ function SettingsScreen() {
         evening: profile.data?.evening_reminder ?? true,
         categories: notifs,
       });
-      toast.success(token ? "Notifications are on for this device." : "Reminders are on.");
+      toast.success(token ? t("settings.notificationsOnDevice") : t("settings.notificationsOn"));
     } catch (error) {
+      setNotifOn(!enabled);
       toast.error(humanizeError(error));
     } finally {
       setNotifBusy(false);
@@ -239,15 +267,11 @@ function SettingsScreen() {
         },
       });
       if (!error && (data as { sent?: number } | null)?.sent) {
-        toast.success("Test push sent to your device.");
+        toast.success(t("settings.testSent"));
         return;
       }
       const local = await sendTestLocalNotification();
-      toast(
-        local
-          ? "Sent a local test notification — remote push isn't configured yet."
-          : "Couldn't send a test notification on this device.",
-      );
+      toast(local ? t("settings.testSentLocal") : t("settings.testFailed"));
     } catch (error) {
       analytics.error(error, { stage: "push_test" });
       toast.error(humanizeError(error));
@@ -375,7 +399,7 @@ function SettingsScreen() {
       <header className="rounded-b-[2rem] bg-muted/60 px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-6">
         <button
           type="button"
-          aria-label="Back"
+          aria-label={t("common.back")}
           onClick={() => {
             haptic.light();
             router.history.back();
@@ -483,13 +507,13 @@ function SettingsScreen() {
             description={t("settings.notificationsDesc")}
           >
             <Switch
-              checked={profile.data?.notifications_enabled ?? false}
+              checked={notifOn}
               onCheckedChange={(checked) => void toggleReminders(checked)}
               disabled={notifBusy}
               aria-label={t("settings.notifications")}
             />
           </Row>
-          {profile.data?.notifications_enabled ? (
+          {notifOn ? (
             <div className="space-y-3">
               <Button
                 variant="outline"
@@ -497,22 +521,22 @@ function SettingsScreen() {
                 disabled={notifBusy}
                 onClick={() => void sendTestNotification()}
               >
-                Send a test notification
+                {t("settings.sendTest")}
               </Button>
               {NOTIFICATION_CATEGORIES.filter(
                 ({ key }) => key !== "morning" && key !== "evening",
-              ).map(({ key, label }) => (
+              ).map(({ key, labelKey, label }) => (
                 <div key={key} className="flex items-center justify-between">
-                  <span className="text-sm">{label}</span>
+                  <span className="text-sm">{t(labelKey, label)}</span>
                   <Switch
                     checked={notifs[key]}
                     onCheckedChange={(checked) => void saveNotifs({ [key]: checked })}
-                    aria-label={label}
+                    aria-label={t(labelKey, label)}
                   />
                 </div>
               ))}
               <div className="flex items-center justify-between">
-                <span className="text-sm">Morning reminder (9:00)</span>
+                <span className="text-sm">{t("settings.morningReminder")}</span>
                 <Switch
                   checked={profile.data?.morning_reminder ?? true}
                   onCheckedChange={(checked) => {
@@ -524,11 +548,11 @@ function SettingsScreen() {
                       }),
                     );
                   }}
-                  aria-label="Morning reminder"
+                  aria-label={t("settings.morningReminder")}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Evening reminder (20:00)</span>
+                <span className="text-sm">{t("settings.eveningReminder")}</span>
                 <Switch
                   checked={profile.data?.evening_reminder ?? true}
                   onCheckedChange={(checked) => {
@@ -540,19 +564,11 @@ function SettingsScreen() {
                       }),
                     );
                   }}
-                  aria-label="Evening reminder"
+                  aria-label={t("settings.eveningReminder")}
                 />
               </div>
             </div>
           ) : null}
-        </SoftCard>
-
-        <SoftCard className="space-y-3">
-          <Row
-            icon={Globe}
-            title={t("settings.language")}
-            description={t("settings.languageDesc")}
-          />
         </SoftCard>
 
         <SoftCard className="space-y-3">
@@ -600,28 +616,42 @@ function SettingsScreen() {
         </SoftCard>
 
         <SoftCard className="space-y-3">
-          <Row icon={Download} title="Export my data" description="Download a copy as JSON." />
+          <Row
+            icon={Download}
+            title={t("settings.exportTitle")}
+            description={t("settings.exportDesc")}
+          />
           <Button
             variant="secondary"
             className="press h-11 w-full rounded-2xl"
             onClick={() => void exportData()}
           >
-            Export
+            {t("settings.exportBtn")}
           </Button>
         </SoftCard>
 
         <SoftCard className="space-y-3">
           <Row
             icon={Cloud}
-            title="Backup & sync"
-            description={online ? "Connected" : "Offline mode — changes save on this device"}
+            title={t("settings.backup")}
+            description={online ? t("settings.connected") : t("settings.offline")}
           />
           <ul className="space-y-1 text-sm text-muted-foreground">
             <li>
-              Status: {online ? (pending > 0 ? "Syncing" : "Up to date") : "Waiting for network"}
+              {t("settings.status")}:{" "}
+              {online
+                ? pending > 0
+                  ? t("settings.syncing")
+                  : t("settings.upToDate")
+                : t("settings.waiting")}
             </li>
-            <li>Pending uploads: {pending}</li>
-            <li>Last sync: {lastSync ? new Date(lastSync).toLocaleString() : "Not yet"}</li>
+            <li>
+              {t("settings.pendingUploads")}: {pending}
+            </li>
+            <li>
+              {t("settings.lastSync")}:{" "}
+              {lastSync ? new Date(lastSync).toLocaleString() : t("settings.notYet")}
+            </li>
           </ul>
           <Button
             variant="secondary"
@@ -629,7 +659,7 @@ function SettingsScreen() {
             onClick={() => void syncNow()}
           >
             <RefreshCw className="size-4" aria-hidden />
-            Sync now
+            {t("settings.syncNow")}
           </Button>
         </SoftCard>
 
@@ -638,15 +668,15 @@ function SettingsScreen() {
             <SoftCard className="bg-lavender flex items-center gap-3">
               <Crown className="size-5 text-on-tint" aria-hidden />
               <div className="flex-1">
-                <p className="font-medium text-on-tint">Go Premium</p>
-                <p className="text-sm text-on-tint/75">7 days free, then unlock everything.</p>
+                <p className="font-medium text-on-tint">{t("settings.goPremium")}</p>
+                <p className="text-sm text-on-tint/75">{t("settings.goPremiumDesc")}</p>
               </div>
             </SoftCard>
           </Link>
         ) : (
           <SoftCard className="bg-lavender flex items-center gap-3">
             <Crown className="size-5 text-on-tint" aria-hidden />
-            <p className="font-medium text-on-tint">Premium active</p>
+            <p className="font-medium text-on-tint">{t("settings.premiumActive")}</p>
           </SoftCard>
         )}
 
@@ -656,7 +686,7 @@ function SettingsScreen() {
           onClick={() => setDeleteOpen(true)}
         >
           <Trash2 className="size-4" aria-hidden />
-          Delete account
+          {t("settings.deleteAccount")}
         </Button>
       </main>
 
@@ -677,36 +707,29 @@ function SettingsScreen() {
       >
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete account?</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <span className="block">
-                Deleting your account will permanently remove all data associated with your account
-                from our servers. This action cannot be undone.
-              </span>
-              <span className="block">
-                If you simply don&apos;t want to use the app right now and may return later, you can
-                safely uninstall the app instead. Your account and progress will remain available
-                when you sign back in.
-              </span>
+              <span className="block">{t("settings.deleteBody1")}</span>
+              <span className="block">{t("settings.deleteBody2")}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
             value={confirmText}
-            placeholder={'Type "delete" to confirm'}
+            placeholder={t("settings.typeDelete")}
             onChange={(event) => setConfirmText(event.target.value)}
             className="h-12 rounded-2xl"
-            aria-label='Type "delete" to confirm'
+            aria-label={t("settings.typeDelete")}
             autoComplete="off"
           />
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-2xl">{t("common.cancel")}</AlertDialogCancel>
             <Button
               variant="destructive"
               className="rounded-2xl"
               disabled={deleting || confirmText.trim().toLowerCase() !== "delete"}
               onClick={() => setFinalOpen(true)}
             >
-              Delete forever
+              {t("settings.deleteForever")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -715,15 +738,12 @@ function SettingsScreen() {
       <AlertDialog open={finalOpen} onOpenChange={setFinalOpen}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action is permanent and cannot be undone. Are you sure you want to delete your
-              account?
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("settings.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("settings.deleteConfirmDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-2xl" disabled={deleting}>
-              Keep Account
+              {t("settings.keepAccount")}
             </AlertDialogCancel>
             <Button
               variant="destructive"
@@ -731,7 +751,7 @@ function SettingsScreen() {
               disabled={deleting}
               onClick={() => void deleteAccount()}
             >
-              Delete Forever
+              {t("settings.deleteForever")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -740,15 +760,11 @@ function SettingsScreen() {
       <AlertDialog open={deletedOpen}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Account Deleted</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your account has been permanently deleted. We&apos;re sorry to see you go. If you ever
-              decide to return, you&apos;re always welcome to create a new account.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("settings.deletedTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("settings.deletedDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <p aria-live="polite" className="text-sm text-muted-foreground">
-            Redirecting to the Sign In page in {countdown} {countdown === 1 ? "second" : "seconds"}
-            ...
+            {t("settings.redirecting", { count: countdown })}
           </p>
         </AlertDialogContent>
       </AlertDialog>

@@ -122,6 +122,10 @@ export type BadgeDef = {
   key: string;
   label: string;
   description: string;
+  /** i18n key for the badge name; label is the English fallback. */
+  nameKey: string;
+  /** i18n key for the badge description; description is the English fallback. */
+  descKey: string;
   category: BadgeCategory;
   icon: LucideIcon;
   tint: string;
@@ -143,89 +147,89 @@ const CORAL = "bg-coral";
 
 export const BADGES: BadgeDef[] = [
   // Streak milestones — also the single source of truth for Healing Progress.
-  { key: "day-1", label: "Day 1", description: "The first quiet day.", days: 1, category: "Streak", icon: Leaf, tint: MINT },
-  { key: "day-3", label: "Day 3", description: "Past the first spike.", days: 3, category: "Streak", icon: Leaf, tint: MINT },
-  { key: "day-7", label: "Day 7", description: "One full week.", days: 7, category: "Streak", icon: Flame, tint: SKY },
-  { key: "day-14", label: "Day 14", description: "Two weeks strong.", days: 14, category: "Streak", icon: Flame, tint: SKY },
-  { key: "day-21", label: "Day 21", description: "Three weeks of quiet.", days: 21, category: "Streak", icon: Flame, tint: SKY },
-  { key: "day-30", label: "Day 30", description: "A whole month.", days: 30, category: "Streak", icon: Calendar, tint: LAV },
-  { key: "day-60", label: "Day 60", description: "Sixty days of you.", days: 60, category: "Streak", icon: Calendar, tint: LAV },
-  { key: "day-90", label: "Day 90", description: "The classic milestone.", days: 90, category: "Streak", icon: Trophy, tint: CORAL },
-  { key: "day-180", label: "180 Days", description: "Half a year free.", days: 180, category: "Streak", icon: Medal, tint: CORAL },
-  { key: "day-365", label: "365 Days", description: "A full year of peace.", days: 365, category: "Streak", icon: Crown, tint: MINT },
+  { key: "day-1", label: "Day 1", description: "The first quiet day.", nameKey: "badge.day-1.name", descKey: "badge.day-1.desc", days: 1, category: "Streak", icon: Leaf, tint: MINT },
+  { key: "day-3", label: "Day 3", description: "Past the first spike.", nameKey: "badge.day-3.name", descKey: "badge.day-3.desc", days: 3, category: "Streak", icon: Leaf, tint: MINT },
+  { key: "day-7", label: "Day 7", description: "One full week.", nameKey: "badge.day-7.name", descKey: "badge.day-7.desc", days: 7, category: "Streak", icon: Flame, tint: SKY },
+  { key: "day-14", label: "Day 14", description: "Two weeks strong.", nameKey: "badge.day-14.name", descKey: "badge.day-14.desc", days: 14, category: "Streak", icon: Flame, tint: SKY },
+  { key: "day-21", label: "Day 21", description: "Three weeks of quiet.", nameKey: "badge.day-21.name", descKey: "badge.day-21.desc", days: 21, category: "Streak", icon: Flame, tint: SKY },
+  { key: "day-30", label: "Day 30", description: "A whole month.", nameKey: "badge.day-30.name", descKey: "badge.day-30.desc", days: 30, category: "Streak", icon: Calendar, tint: LAV },
+  { key: "day-60", label: "Day 60", description: "Sixty days of you.", nameKey: "badge.day-60.name", descKey: "badge.day-60.desc", days: 60, category: "Streak", icon: Calendar, tint: LAV },
+  { key: "day-90", label: "Day 90", description: "The classic milestone.", nameKey: "badge.day-90.name", descKey: "badge.day-90.desc", days: 90, category: "Streak", icon: Trophy, tint: CORAL },
+  { key: "day-180", label: "180 Days", description: "Half a year free.", nameKey: "badge.day-180.name", descKey: "badge.day-180.desc", days: 180, category: "Streak", icon: Medal, tint: CORAL },
+  { key: "day-365", label: "365 Days", description: "A full year of peace.", nameKey: "badge.day-365.name", descKey: "badge.day-365.desc", days: 365, category: "Streak", icon: Crown, tint: MINT },
 
   // Journal
-  { key: "journal-first", label: "First Words", description: "Wrote your first journal entry.", category: "Journal", icon: PenLine, tint: SKY, metric: "journalEntries", target: 1, unit: "Entries" },
-  { key: "journal-streak-3", label: "Daily Writer", description: "Journaled 3 days in a row.", category: "Journal", icon: BookOpen, tint: SKY, metric: "journalStreak", target: 3, unit: "Days" },
-  { key: "journal-streak-7", label: "Reflection Habit", description: "Journaled 7 days in a row.", category: "Journal", icon: CalendarCheck, tint: SKY, metric: "journalStreak", target: 7, unit: "Days" },
-  { key: "journal-25", label: "Deep Reflection", description: "Wrote 25 journal entries.", category: "Journal", icon: Brain, tint: LAV, metric: "journalEntries", target: 25, unit: "Entries" },
-  { key: "journal-100", label: "Healing Through Words", description: "Wrote 100 journal entries.", category: "Journal", icon: Feather, tint: LAV, metric: "journalEntries", target: 100, unit: "Entries" },
+  { key: "journal-first", label: "First Words", description: "Wrote your first journal entry.", nameKey: "badge.journal-first.name", descKey: "badge.journal-first.desc", category: "Journal", icon: PenLine, tint: SKY, metric: "journalEntries", target: 1, unit: "Entries" },
+  { key: "journal-streak-3", label: "Daily Writer", description: "Journaled 3 days in a row.", nameKey: "badge.journal-streak-3.name", descKey: "badge.journal-streak-3.desc", category: "Journal", icon: BookOpen, tint: SKY, metric: "journalStreak", target: 3, unit: "Days" },
+  { key: "journal-streak-7", label: "Reflection Habit", description: "Journaled 7 days in a row.", nameKey: "badge.journal-streak-7.name", descKey: "badge.journal-streak-7.desc", category: "Journal", icon: CalendarCheck, tint: SKY, metric: "journalStreak", target: 7, unit: "Days" },
+  { key: "journal-25", label: "Deep Reflection", description: "Wrote 25 journal entries.", nameKey: "badge.journal-25.name", descKey: "badge.journal-25.desc", category: "Journal", icon: Brain, tint: LAV, metric: "journalEntries", target: 25, unit: "Entries" },
+  { key: "journal-100", label: "Healing Through Words", description: "Wrote 100 journal entries.", nameKey: "badge.journal-100.name", descKey: "badge.journal-100.desc", category: "Journal", icon: Feather, tint: LAV, metric: "journalEntries", target: 100, unit: "Entries" },
 
   // Memories
-  { key: "picture-first", label: "First Memory", description: "Added your first picture.", category: "Memories", icon: Camera, tint: MINT, metric: "pictures", target: 1, unit: "Pictures" },
-  { key: "picture-10", label: "Memory Keeper", description: "Added 10 pictures.", category: "Memories", icon: Images, tint: MINT, metric: "pictures", target: 10, unit: "Pictures" },
-  { key: "picture-25", label: "New Perspective", description: "Added 25 pictures.", category: "Memories", icon: Sparkles, tint: MINT, metric: "pictures", target: 25, unit: "Pictures" },
+  { key: "picture-first", label: "First Memory", description: "Added your first picture.", nameKey: "badge.picture-first.name", descKey: "badge.picture-first.desc", category: "Memories", icon: Camera, tint: MINT, metric: "pictures", target: 1, unit: "Pictures" },
+  { key: "picture-10", label: "Memory Keeper", description: "Added 10 pictures.", nameKey: "badge.picture-10.name", descKey: "badge.picture-10.desc", category: "Memories", icon: Images, tint: MINT, metric: "pictures", target: 10, unit: "Pictures" },
+  { key: "picture-25", label: "New Perspective", description: "Added 25 pictures.", nameKey: "badge.picture-25.name", descKey: "badge.picture-25.desc", category: "Memories", icon: Sparkles, tint: MINT, metric: "pictures", target: 25, unit: "Pictures" },
 
   // Triggers
-  { key: "trigger-first", label: "Self Aware", description: "Logged your first trigger.", category: "Triggers", icon: Lightbulb, tint: CORAL, metric: "triggers", target: 1, unit: "Triggers" },
-  { key: "trigger-10", label: "Pattern Finder", description: "Logged 10 triggers.", category: "Triggers", icon: Search, tint: CORAL, metric: "triggers", target: 10, unit: "Triggers" },
-  { key: "trigger-50", label: "Trigger Master", description: "Logged 50 triggers.", category: "Triggers", icon: Target, tint: CORAL, metric: "triggers", target: 50, unit: "Triggers" },
+  { key: "trigger-first", label: "Self Aware", description: "Logged your first trigger.", nameKey: "badge.trigger-first.name", descKey: "badge.trigger-first.desc", category: "Triggers", icon: Lightbulb, tint: CORAL, metric: "triggers", target: 1, unit: "Triggers" },
+  { key: "trigger-10", label: "Pattern Finder", description: "Logged 10 triggers.", nameKey: "badge.trigger-10.name", descKey: "badge.trigger-10.desc", category: "Triggers", icon: Search, tint: CORAL, metric: "triggers", target: 10, unit: "Triggers" },
+  { key: "trigger-50", label: "Trigger Master", description: "Logged 50 triggers.", nameKey: "badge.trigger-50.name", descKey: "badge.trigger-50.desc", category: "Triggers", icon: Target, tint: CORAL, metric: "triggers", target: 50, unit: "Triggers" },
 
   // Mood check-ins
-  { key: "mood-first", label: "First Check-In", description: "Completed your first mood check-in.", category: "Mood Check-Ins", icon: Smile, tint: SKY, metric: "moods", target: 1, unit: "Check-ins" },
-  { key: "mood-7", label: "Present Today", description: "Completed 7 mood check-ins.", category: "Mood Check-Ins", icon: Sun, tint: SKY, metric: "moods", target: 7, unit: "Check-ins" },
-  { key: "mood-30", label: "Emotion Explorer", description: "Completed 30 mood check-ins.", category: "Mood Check-Ins", icon: Compass, tint: SKY, metric: "moods", target: 30, unit: "Check-ins" },
-  { key: "mood-100", label: "Inner Balance", description: "Completed 100 mood check-ins.", category: "Mood Check-Ins", icon: Scale, tint: SKY, metric: "moods", target: 100, unit: "Check-ins" },
+  { key: "mood-first", label: "First Check-In", description: "Completed your first mood check-in.", nameKey: "badge.mood-first.name", descKey: "badge.mood-first.desc", category: "Mood Check-Ins", icon: Smile, tint: SKY, metric: "moods", target: 1, unit: "Check-ins" },
+  { key: "mood-7", label: "Present Today", description: "Completed 7 mood check-ins.", nameKey: "badge.mood-7.name", descKey: "badge.mood-7.desc", category: "Mood Check-Ins", icon: Sun, tint: SKY, metric: "moods", target: 7, unit: "Check-ins" },
+  { key: "mood-30", label: "Emotion Explorer", description: "Completed 30 mood check-ins.", nameKey: "badge.mood-30.name", descKey: "badge.mood-30.desc", category: "Mood Check-Ins", icon: Compass, tint: SKY, metric: "moods", target: 30, unit: "Check-ins" },
+  { key: "mood-100", label: "Inner Balance", description: "Completed 100 mood check-ins.", nameKey: "badge.mood-100.name", descKey: "badge.mood-100.desc", category: "Mood Check-Ins", icon: Scale, tint: SKY, metric: "moods", target: 100, unit: "Check-ins" },
 
   // Wins
-  { key: "win-first", label: "First Win", description: "Recorded your first win.", category: "Wins", icon: Star, tint: MINT, metric: "wins", target: 1, unit: "Wins" },
-  { key: "strong-mind", label: "Strong Mind", description: "Recorded 5 wins.", category: "Wins", icon: Shield, tint: MINT, metric: "wins", target: 5, unit: "Wins" },
-  { key: "win-10", label: "Momentum", description: "Recorded 10 wins.", category: "Wins", icon: Zap, tint: MINT, metric: "wins", target: 10, unit: "Wins" },
-  { key: "win-50", label: "Stronger Every Day", description: "Recorded 50 wins.", category: "Wins", icon: Mountain, tint: MINT, metric: "wins", target: 50, unit: "Wins" },
+  { key: "win-first", label: "First Win", description: "Recorded your first win.", nameKey: "badge.win-first.name", descKey: "badge.win-first.desc", category: "Wins", icon: Star, tint: MINT, metric: "wins", target: 1, unit: "Wins" },
+  { key: "strong-mind", label: "Strong Mind", description: "Recorded 5 wins.", nameKey: "badge.strong-mind.name", descKey: "badge.strong-mind.desc", category: "Wins", icon: Shield, tint: MINT, metric: "wins", target: 5, unit: "Wins" },
+  { key: "win-10", label: "Momentum", description: "Recorded 10 wins.", nameKey: "badge.win-10.name", descKey: "badge.win-10.desc", category: "Wins", icon: Zap, tint: MINT, metric: "wins", target: 10, unit: "Wins" },
+  { key: "win-50", label: "Stronger Every Day", description: "Recorded 50 wins.", nameKey: "badge.win-50.name", descKey: "badge.win-50.desc", category: "Wins", icon: Mountain, tint: MINT, metric: "wins", target: 50, unit: "Wins" },
 
   // Flags
-  { key: "healing-begins", label: "Healing Begins", description: "Logged your first red flag.", category: "Flags", icon: Flag, tint: CORAL, metric: "flags", target: 1, unit: "Flags" },
-  { key: "flag-10", label: "Lesson Learned", description: "Logged 10 flags.", category: "Flags", icon: BookOpen, tint: CORAL, metric: "flags", target: 10, unit: "Flags" },
-  { key: "flag-50", label: "Pattern Breaker", description: "Logged 50 flags.", category: "Flags", icon: Repeat, tint: CORAL, metric: "flags", target: 50, unit: "Flags" },
+  { key: "healing-begins", label: "Healing Begins", description: "Logged your first red flag.", nameKey: "badge.healing-begins.name", descKey: "badge.healing-begins.desc", category: "Flags", icon: Flag, tint: CORAL, metric: "flags", target: 1, unit: "Flags" },
+  { key: "flag-10", label: "Lesson Learned", description: "Logged 10 flags.", nameKey: "badge.flag-10.name", descKey: "badge.flag-10.desc", category: "Flags", icon: BookOpen, tint: CORAL, metric: "flags", target: 10, unit: "Flags" },
+  { key: "flag-50", label: "Pattern Breaker", description: "Logged 50 flags.", nameKey: "badge.flag-50.name", descKey: "badge.flag-50.desc", category: "Flags", icon: Repeat, tint: CORAL, metric: "flags", target: 50, unit: "Flags" },
 
   // Letters
-  { key: "fresh-start", label: "Fresh Start", description: "Wrote your first unsent letter.", category: "Unsent Letters", icon: Mail, tint: LAV, metric: "letters", target: 1, unit: "Letters" },
-  { key: "letter-10", label: "Let It Out", description: "Wrote 10 unsent letters.", category: "Unsent Letters", icon: MailOpen, tint: LAV, metric: "letters", target: 10, unit: "Letters" },
-  { key: "letter-50", label: "Heart Unloaded", description: "Wrote 50 unsent letters.", category: "Unsent Letters", icon: Send, tint: LAV, metric: "letters", target: 50, unit: "Letters" },
+  { key: "fresh-start", label: "Fresh Start", description: "Wrote your first unsent letter.", nameKey: "badge.fresh-start.name", descKey: "badge.fresh-start.desc", category: "Unsent Letters", icon: Mail, tint: LAV, metric: "letters", target: 1, unit: "Letters" },
+  { key: "letter-10", label: "Let It Out", description: "Wrote 10 unsent letters.", nameKey: "badge.letter-10.name", descKey: "badge.letter-10.desc", category: "Unsent Letters", icon: MailOpen, tint: LAV, metric: "letters", target: 10, unit: "Letters" },
+  { key: "letter-50", label: "Heart Unloaded", description: "Wrote 50 unsent letters.", nameKey: "badge.letter-50.name", descKey: "badge.letter-50.desc", category: "Unsent Letters", icon: Send, tint: LAV, metric: "letters", target: 50, unit: "Letters" },
 
   // Emergency toolkit
-  { key: "resilient", label: "Resilient", description: "Used the Emergency Toolkit once.", category: "Emergency Toolkit", icon: ShieldCheck, tint: CORAL, metric: "sosUses", target: 1, unit: "Times" },
-  { key: "sos-10", label: "Stayed Strong", description: "Used the toolkit 10 times instead of breaking no contact.", category: "Emergency Toolkit", icon: HeartHandshake, tint: CORAL, metric: "sosUses", target: 10, unit: "Times" },
-  { key: "sos-sessions-25", label: "One More Minute", description: "Completed 25 calming sessions.", category: "Emergency Toolkit", icon: Timer, tint: CORAL, metric: "sosSessions", target: 25, unit: "Sessions" },
+  { key: "resilient", label: "Resilient", description: "Used the Emergency Toolkit once.", nameKey: "badge.resilient.name", descKey: "badge.resilient.desc", category: "Emergency Toolkit", icon: ShieldCheck, tint: CORAL, metric: "sosUses", target: 1, unit: "Times" },
+  { key: "sos-10", label: "Stayed Strong", description: "Used the toolkit 10 times instead of breaking no contact.", nameKey: "badge.sos-10.name", descKey: "badge.sos-10.desc", category: "Emergency Toolkit", icon: HeartHandshake, tint: CORAL, metric: "sosUses", target: 10, unit: "Times" },
+  { key: "sos-sessions-25", label: "One More Minute", description: "Completed 25 calming sessions.", nameKey: "badge.sos-sessions-25.name", descKey: "badge.sos-sessions-25.desc", category: "Emergency Toolkit", icon: Timer, tint: CORAL, metric: "sosSessions", target: 25, unit: "Sessions" },
 
   // Pop It
-  { key: "popit-first", label: "Deep Breath", description: "Completed your first Pop It session.", category: "Pop It", icon: Wind, tint: LAV, metric: "popItSessions", target: 1, unit: "Sessions" },
-  { key: "popit-10", label: "Ride It Out", description: "Completed 10 Pop It sessions.", category: "Pop It", icon: Waves, tint: LAV, metric: "popItSessions", target: 10, unit: "Sessions" },
-  { key: "popit-50", label: "Calm Mind", description: "Completed 50 Pop It sessions.", category: "Pop It", icon: Moon, tint: LAV, metric: "popItSessions", target: 50, unit: "Sessions" },
+  { key: "popit-first", label: "Deep Breath", description: "Completed your first Pop It session.", nameKey: "badge.popit-first.name", descKey: "badge.popit-first.desc", category: "Pop It", icon: Wind, tint: LAV, metric: "popItSessions", target: 1, unit: "Sessions" },
+  { key: "popit-10", label: "Ride It Out", description: "Completed 10 Pop It sessions.", nameKey: "badge.popit-10.name", descKey: "badge.popit-10.desc", category: "Pop It", icon: Waves, tint: LAV, metric: "popItSessions", target: 10, unit: "Sessions" },
+  { key: "popit-50", label: "Calm Mind", description: "Completed 50 Pop It sessions.", nameKey: "badge.popit-50.name", descKey: "badge.popit-50.desc", category: "Pop It", icon: Moon, tint: LAV, metric: "popItSessions", target: 50, unit: "Sessions" },
 
   // Daily tasks
-  { key: "tasks-first", label: "Productive Day", description: "Completed all daily tasks once.", category: "Daily Tasks", icon: CheckCircle2, tint: MINT, metric: "dailyTaskDays", target: 1, unit: "Days" },
-  { key: "tasks-streak-7", label: "Daily Discipline", description: "Completed all daily tasks 7 days in a row.", category: "Daily Tasks", icon: ListChecks, tint: MINT, metric: "dailyTaskStreak", target: 7, unit: "Days" },
-  { key: "tasks-30", label: "Consistency Wins", description: "Completed daily tasks on 30 days.", category: "Daily Tasks", icon: CalendarHeart, tint: MINT, metric: "dailyTaskDays", target: 30, unit: "Days" },
+  { key: "tasks-first", label: "Productive Day", description: "Completed all daily tasks once.", nameKey: "badge.tasks-first.name", descKey: "badge.tasks-first.desc", category: "Daily Tasks", icon: CheckCircle2, tint: MINT, metric: "dailyTaskDays", target: 1, unit: "Days" },
+  { key: "tasks-streak-7", label: "Daily Discipline", description: "Completed all daily tasks 7 days in a row.", nameKey: "badge.tasks-streak-7.name", descKey: "badge.tasks-streak-7.desc", category: "Daily Tasks", icon: ListChecks, tint: MINT, metric: "dailyTaskStreak", target: 7, unit: "Days" },
+  { key: "tasks-30", label: "Consistency Wins", description: "Completed daily tasks on 30 days.", nameKey: "badge.tasks-30.name", descKey: "badge.tasks-30.desc", category: "Daily Tasks", icon: CalendarHeart, tint: MINT, metric: "dailyTaskDays", target: 30, unit: "Days" },
 
   // Reminders
-  { key: "reminder-return", label: "Never Missed", description: "Opened a reminder and came back to the app.", category: "Reminders", icon: Award, tint: SKY, metric: "notificationReturns", target: 1, unit: "Returns" },
-  { key: "back-on-track", label: "Back on Track", description: "Came back after missing a day.", category: "Reminders", icon: Rocket, tint: SKY, earned: (s) => s.returnedAfterGap },
-  { key: "morning-7", label: "Morning Routine", description: "Opened the app 7 mornings in a row.", category: "Reminders", icon: Sunrise, tint: SKY, metric: "morningStreak", target: 7, unit: "Mornings" },
+  { key: "reminder-return", label: "Never Missed", description: "Opened a reminder and came back to the app.", nameKey: "badge.reminder-return.name", descKey: "badge.reminder-return.desc", category: "Reminders", icon: Award, tint: SKY, metric: "notificationReturns", target: 1, unit: "Returns" },
+  { key: "back-on-track", label: "Back on Track", description: "Came back after missing a day.", nameKey: "badge.back-on-track.name", descKey: "badge.back-on-track.desc", category: "Reminders", icon: Rocket, tint: SKY, earned: (s) => s.returnedAfterGap },
+  { key: "morning-7", label: "Morning Routine", description: "Opened the app 7 mornings in a row.", nameKey: "badge.morning-7.name", descKey: "badge.morning-7.desc", category: "Reminders", icon: Sunrise, tint: SKY, metric: "morningStreak", target: 7, unit: "Mornings" },
 
   // Engagement
-  { key: "explorer", label: "Explorer", description: "Visited every tab.", category: "Engagement", icon: Compass, tint: LAV, metric: "tabsVisited", target: 5, unit: "Tabs" },
-  { key: "curious-mind", label: "Curious Mind", description: "Used every feature at least once.", category: "Engagement", icon: Sparkles, tint: LAV, metric: "featuresUsed", target: 10, unit: "Features" },
-  { key: "loyal-companion", label: "Loyal Companion", description: "Opened the app on 30 different days.", category: "Engagement", icon: Heart, tint: LAV, metric: "appOpenDays", target: 30, unit: "Days" },
-  { key: "dedicated", label: "Dedicated", description: "Opened the app on 100 different days.", category: "Engagement", icon: Gem, tint: LAV, metric: "appOpenDays", target: 100, unit: "Days" },
+  { key: "explorer", label: "Explorer", description: "Visited every tab.", nameKey: "badge.explorer.name", descKey: "badge.explorer.desc", category: "Engagement", icon: Compass, tint: LAV, metric: "tabsVisited", target: 5, unit: "Tabs" },
+  { key: "curious-mind", label: "Curious Mind", description: "Used every feature at least once.", nameKey: "badge.curious-mind.name", descKey: "badge.curious-mind.desc", category: "Engagement", icon: Sparkles, tint: LAV, metric: "featuresUsed", target: 10, unit: "Features" },
+  { key: "loyal-companion", label: "Loyal Companion", description: "Opened the app on 30 different days.", nameKey: "badge.loyal-companion.name", descKey: "badge.loyal-companion.desc", category: "Engagement", icon: Heart, tint: LAV, metric: "appOpenDays", target: 30, unit: "Days" },
+  { key: "dedicated", label: "Dedicated", description: "Opened the app on 100 different days.", nameKey: "badge.dedicated.name", descKey: "badge.dedicated.desc", category: "Engagement", icon: Gem, tint: LAV, metric: "appOpenDays", target: 100, unit: "Days" },
 
   // Special
-  { key: "phoenix", label: "Phoenix", description: "Reached 90 days of no contact.", category: "Special", icon: Flame, tint: CORAL, metric: "days", target: 90, unit: "Days" },
-  { key: "unbreakable", label: "Unbreakable", description: "Reached 365 days of no contact.", category: "Special", icon: Crown, tint: CORAL, metric: "days", target: 365, unit: "Days" },
-  { key: "comeback", label: "Comeback", description: "Restarted after a relapse and reached Day 7 again.", category: "Special", icon: Repeat, tint: MINT, earned: (s) => s.relapses >= 1 && s.days >= 7 },
-  { key: "hope-lives", label: "Hope Lives", description: "Kept going after breaking a streak.", category: "Special", icon: PartyPopper, tint: MINT, earned: (s) => s.relapses >= 1 },
-  { key: "one-step", label: "One Step at a Time", description: "Completed the onboarding journey.", category: "Special", icon: Footprints, tint: SKY, earned: (s) => s.onboarded },
-  { key: "new-chapter", label: "New Chapter", description: "Completed your profile setup.", category: "Special", icon: UserCheck, tint: SKY, earned: (s) => s.profileSetup },
+  { key: "phoenix", label: "Phoenix", description: "Reached 90 days of no contact.", nameKey: "badge.phoenix.name", descKey: "badge.phoenix.desc", category: "Special", icon: Flame, tint: CORAL, metric: "days", target: 90, unit: "Days" },
+  { key: "unbreakable", label: "Unbreakable", description: "Reached 365 days of no contact.", nameKey: "badge.unbreakable.name", descKey: "badge.unbreakable.desc", category: "Special", icon: Crown, tint: CORAL, metric: "days", target: 365, unit: "Days" },
+  { key: "comeback", label: "Comeback", description: "Restarted after a relapse and reached Day 7 again.", nameKey: "badge.comeback.name", descKey: "badge.comeback.desc", category: "Special", icon: Repeat, tint: MINT, earned: (s) => s.relapses >= 1 && s.days >= 7 },
+  { key: "hope-lives", label: "Hope Lives", description: "Kept going after breaking a streak.", nameKey: "badge.hope-lives.name", descKey: "badge.hope-lives.desc", category: "Special", icon: PartyPopper, tint: MINT, earned: (s) => s.relapses >= 1 },
+  { key: "one-step", label: "One Step at a Time", description: "Completed the onboarding journey.", nameKey: "badge.one-step.name", descKey: "badge.one-step.desc", category: "Special", icon: Footprints, tint: SKY, earned: (s) => s.onboarded },
+  { key: "new-chapter", label: "New Chapter", description: "Completed your profile setup.", nameKey: "badge.new-chapter.name", descKey: "badge.new-chapter.desc", category: "Special", icon: UserCheck, tint: SKY, earned: (s) => s.profileSetup },
 ];
 
 export const BADGE_CATEGORIES: BadgeCategory[] = [

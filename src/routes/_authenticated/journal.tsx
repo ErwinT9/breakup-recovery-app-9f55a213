@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { ActivityListScreen } from "@/components/ActivityListScreen";
 import { journalRepo } from "@/data/repository";
@@ -12,18 +13,21 @@ export const Route = createFileRoute("/_authenticated/journal")({
       { property: "og:description", content: "Private daily entries that stay on your device first." },
     ],
   }),
-  component: () => (
-    <ActivityListScreen
-      title="Journal"
-      subtitle="Private, unfiltered, only yours"
-      cacheKey="journal"
-      repo={journalRepo}
-      mainField="body"
-      mainPlaceholder="Today felt..."
-      noteField="title"
-      notePlaceholder="Title (optional)"
-      multiline
-      emptyText="No entries yet — start with how today felt."
-    />
-  ),
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <ActivityListScreen
+        title={t("journal.title")}
+        subtitle={t("journal.subtitle")}
+        cacheKey="journal"
+        repo={journalRepo}
+        mainField="body"
+        mainPlaceholder={t("journal.mainPlaceholder")}
+        noteField="title"
+        notePlaceholder={t("journal.notePlaceholder")}
+        multiline
+        emptyText={t("journal.emptyText")}
+      />
+    );
+  },
 });

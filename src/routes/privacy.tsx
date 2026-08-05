@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -13,34 +14,46 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function Privacy() {
+  const { t } = useTranslation();
   return (
     <article className="mx-auto w-full max-w-md space-y-4 px-6 py-[calc(env(safe-area-inset-top)+3rem)] text-sm leading-relaxed text-muted-foreground">
-      <h1 className="text-2xl font-semibold text-foreground">Privacy Policy</h1>
+      <h1 className="text-2xl font-semibold text-foreground">{t("privacy.title", "Privacy Policy")}</h1>
       <p>
-        This page is maintained by the app owner to answer common privacy questions about No Contact
-        Tracker. It is not an independent certification.
+        {t(
+          "privacy.intro",
+          "This page is maintained by the app owner to answer common privacy questions about No Contact Tracker. It is not an independent certification.",
+        )}
       </p>
-      <h2 className="pt-2 text-base font-medium text-foreground">What we store</h2>
+      <h2 className="pt-2 text-base font-medium text-foreground">{t("privacy.storeTitle", "What we store")}</h2>
       <p>
-        Your email address, streak dates, questionnaire answers, flags, wins, badges and unsent letters. Content is cached on your device and synced to your private account.
+        {t(
+          "privacy.storeBody",
+          "Your email address, streak dates, questionnaire answers, flags, wins, badges and unsent letters. Content is cached on your device and synced to your private account.",
+        )}
       </p>
-      <h2 className="pt-2 text-base font-medium text-foreground">Who can access it</h2>
+      <h2 className="pt-2 text-base font-medium text-foreground">{t("privacy.accessTitle", "Who can access it")}</h2>
       <p>
-        Only you. Database access rules scope every row to your authenticated account, so other users
-        cannot read your data.
+        {t(
+          "privacy.accessBody",
+          "Only you. Database access rules scope every row to your authenticated account, so other users cannot read your data.",
+        )}
       </p>
-      <h2 className="pt-2 text-base font-medium text-foreground">Deletion</h2>
+      <h2 className="pt-2 text-base font-medium text-foreground">{t("privacy.deletionTitle", "Deletion")}</h2>
       <p>
-        Signing out clears the cache on your device. To delete your account and all synced data,
-        contact the app owner from the email on your account.
+        {t(
+          "privacy.deletionBody",
+          "Signing out clears the cache on your device. To delete your account and all synced data, contact the app owner from the email on your account.",
+        )}
       </p>
-      <h2 className="pt-2 text-base font-medium text-foreground">Payments</h2>
+      <h2 className="pt-2 text-base font-medium text-foreground">{t("privacy.paymentsTitle", "Payments")}</h2>
       <p>
-        Subscriptions are processed by Google Play through RevenueCat. We never see or store your
-        payment details.
+        {t(
+          "privacy.paymentsBody",
+          "Subscriptions are processed by Google Play through RevenueCat. We never see or store your payment details.",
+        )}
       </p>
       <Link to="/" className="inline-block pt-4 text-foreground underline">
-        Back to the app
+        {t("privacy.backToApp", "Back to the app")}
       </Link>
     </article>
   );

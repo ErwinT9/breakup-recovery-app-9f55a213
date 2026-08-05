@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Award, ChevronRight, Target } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { SoftCard } from "@/components/SoftCard";
 import { currentMilestoneBadge, nextMilestoneBadge } from "@/lib/content";
@@ -23,10 +24,6 @@ function formatDuration(ms: number, compactUnderDays = 2): string {
   return hours === 0 ? `${days}d` : `${days}d ${hours}h`;
 }
 
-function progressMessage(remainingMs: number): string {
-  return `Keep going! ${formatDuration(remainingMs)} to unlock your next badge.`;
-}
-
 /** Streak progress toward the next milestone badge. Badge system is the source of truth. */
 export function HealingProgress({
   startedAt,
@@ -35,6 +32,7 @@ export function HealingProgress({
   startedAt: string | undefined;
   bestDays: number;
 }) {
+  const { t } = useTranslation();
   const elapsed = elapsedSince(startedAt ?? new Date().toISOString());
   const elapsedMs = elapsed.totalMs;
   const exactDays = elapsedMs / DAY_MS;
@@ -53,7 +51,7 @@ export function HealingProgress({
     <Link to="/badges" className="press block">
       <SoftCard>
         <div className="flex items-center justify-between">
-          <p className="font-medium">Healing Progress</p>
+          <p className="font-medium">{t("progress.title")}</p>
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </div>
 
@@ -71,9 +69,9 @@ export function HealingProgress({
               <div className="min-w-0">
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Target className="size-3.5" aria-hidden />
-                  Next goal
+                  {t("progress.nextGoal")}
                 </p>
-                <p className="truncate font-semibold">{next.days}-Day Badge</p>
+                <p className="truncate font-semibold">{t("progress.dayBadge", { days: next.days })}</p>
               </div>
               <p className="ml-auto text-sm tabular-nums text-muted-foreground">
                 {formatDuration(elapsedMs, compactUnder)} /{" "}
@@ -91,17 +89,15 @@ export function HealingProgress({
               <span className="text-xs tabular-nums text-muted-foreground">{percent}%</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {progressMessage(remainingMs)}
+              {t("progress.keepGoing", { duration: formatDuration(remainingMs) })}
             </p>
           </>
         ) : (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Every milestone badge unlocked. You are writing your own chapter now.
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("progress.allUnlocked")}</p>
         )}
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Best streak so far: {Math.max(bestDays, Math.floor(exactDays))} days
+          {t("progress.bestStreak", { days: Math.max(bestDays, Math.floor(exactDays)) })}
         </p>
       </SoftCard>
     </Link>

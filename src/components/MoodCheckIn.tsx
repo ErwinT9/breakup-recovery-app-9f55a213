@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ function Chip({
 }
 
 function HoldCircle({ done, onDone }: { done: boolean; onDone: () => void }) {
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(done ? 1 : 0);
   const [holding, setHolding] = useState(false);
   const frame = useRef<number | null>(null);
@@ -90,7 +92,7 @@ function HoldCircle({ done, onDone }: { done: boolean; onDone: () => void }) {
     <div className="flex flex-col items-center gap-4">
       <button
         type="button"
-        aria-label="Press and hold for five seconds"
+        aria-label={t("mood.holdAria", "Press and hold for five seconds")}
         onPointerDown={begin}
         onPointerUp={stop}
         onPointerLeave={stop}
@@ -127,13 +129,13 @@ function HoldCircle({ done, onDone }: { done: boolean; onDone: () => void }) {
           />
         </svg>
         <span className="relative text-sm font-medium text-on-tint">
-          {finished.current ? <Check className="size-7" aria-hidden /> : holding ? "Keep holding…" : "Hold me"}
+          {finished.current ? <Check className="size-7" aria-hidden /> : holding ? t("mood.keepHolding", "Keep holding…") : t("mood.holdMe", "Hold me")}
         </span>
       </button>
       <p className="min-h-10 text-center text-sm text-muted-foreground">
         {finished.current
-          ? "You stayed with your feelings. That takes courage."
-          : "Press and hold the circle for 5 seconds."}
+          ? t("mood.stayedFeelings", "You stayed with your feelings. That takes courage.")
+          : t("mood.pressHoldHint", "Press and hold the circle for 5 seconds.")}
       </p>
     </div>
   );
@@ -154,6 +156,7 @@ export function MoodCheckIn({
   viewOnly?: boolean;
   summary?: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [mood, setMood] = useState<string | null>(null);
   const [action, setAction] = useState<string | null>(null);
@@ -189,9 +192,9 @@ export function MoodCheckIn({
         {step === 0 && (
           <div key="step-0" className="animate-step-in space-y-5">
             <div className="space-y-1.5">
-              <DialogTitle className="text-xl">How does today feel?</DialogTitle>
+              <DialogTitle className="text-xl">{t("mood.step0Title", "How does today feel?")}</DialogTitle>
               <DialogDescription>
-                Choose the emotion that best matches how you're feeling right now.
+                {t("mood.step0Desc", "Choose the emotion that best matches how you're feeling right now.")}
               </DialogDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -213,7 +216,7 @@ export function MoodCheckIn({
               disabled={!mood}
               onClick={() => setStep(1)}
             >
-              Continue
+              {t("mood.continue", "Continue")}
             </Button>
           </div>
         )}
@@ -221,8 +224,8 @@ export function MoodCheckIn({
         {step === 1 && (
           <div key="step-1" className="animate-step-in space-y-5">
             <div className="space-y-1.5">
-              <DialogTitle className="text-xl">Take a moment to witness this feeling.</DialogTitle>
-              <DialogDescription>You don't have to fix it. Just notice it.</DialogDescription>
+              <DialogTitle className="text-xl">{t("mood.step1Title", "Take a moment to witness this feeling.")}</DialogTitle>
+              <DialogDescription>{t("mood.step1Desc", "You don't have to fix it. Just notice it.")}</DialogDescription>
             </div>
             <HoldCircle done={held} onDone={() => setHeld(true)} />
             <Button
@@ -230,7 +233,7 @@ export function MoodCheckIn({
               disabled={!held}
               onClick={() => setStep(2)}
             >
-              Continue
+              {t("mood.continue", "Continue")}
             </Button>
           </div>
         )}
@@ -238,9 +241,9 @@ export function MoodCheckIn({
         {step === 2 && (
           <div key="step-2" className="animate-step-in space-y-5">
             <div className="space-y-1.5">
-              <DialogTitle className="text-xl">How do you want to respond today?</DialogTitle>
+              <DialogTitle className="text-xl">{t("mood.step2Title", "How do you want to respond today?")}</DialogTitle>
               <DialogDescription>
-                Choose one small action that will help you stay strong.
+                {t("mood.step2Desc", "Choose one small action that will help you stay strong.")}
               </DialogDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -258,11 +261,11 @@ export function MoodCheckIn({
               ))}
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium">Custom intention</p>
+              <p className="text-sm font-medium">{t("mood.customIntention", "Custom intention")}</p>
               <Textarea
                 value={custom}
                 onChange={(event) => setCustom(event.target.value)}
-                placeholder="Write your own intention for today…"
+                placeholder={t("mood.customPlaceholder", "Write your own intention for today…")}
                 rows={3}
                 maxLength={280}
                 className="rounded-2xl"
@@ -273,7 +276,7 @@ export function MoodCheckIn({
               disabled={!canFinish || saving}
               onClick={() => void finish()}
             >
-              {saving ? "Saving…" : "Finish check-in"}
+              {saving ? t("mood.saving", "Saving…") : t("mood.finish", "Finish check-in")}
             </Button>
           </div>
         )}
@@ -285,16 +288,18 @@ export function MoodCheckIn({
             </span>
             <div className="space-y-1.5">
               <DialogTitle className="text-xl">
-                {viewOnly ? "Today's check-in" : "We are Proud of You!"}
+                {viewOnly ? t("mood.todaysCheckIn", "Today's check-in") : t("mood.proudTitle", "We are Proud of You!")}
               </DialogTitle>
               <DialogDescription>
-                You checked in with yourself and chose how you want to move forward. Every small
-                step strengthens your healing.
+                {t(
+                  "mood.proudDesc",
+                  "You checked in with yourself and chose how you want to move forward. Every small step strengthens your healing.",
+                )}
               </DialogDescription>
             </div>
             {viewOnly && summary ? <div className="text-sm">{summary}</div> : null}
             <Button className="press h-12 w-full rounded-2xl" onClick={() => onOpenChange(false)}>
-              Return Home
+              {t("mood.returnHome", "Return Home")}
             </Button>
           </div>
         )}

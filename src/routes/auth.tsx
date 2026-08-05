@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -35,6 +36,7 @@ const schema = z.object({
 type Mode = "welcome" | "signup" | "signin" | "forgot";
 
 function AuthScreen() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
   const [mode, setMode] = useState<Mode>("welcome");
@@ -90,20 +92,21 @@ function AuthScreen() {
 
     if (mode === "forgot") {
       const parsed = z.string().email().safeParse(email.trim());
-      if (!parsed.success) return setError("Enter a valid email");
+      if (!parsed.success) return setError(t("auth.invalidEmail", "Enter a valid email"));
       setBusy(true);
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(parsed.data, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       setBusy(false);
       if (resetError) return setError(humanizeError(resetError));
-      toast.success("Password reset link sent. Check your inbox.");
+      toast.success(t("auth.resetLinkSent", "Password reset link sent. Check your inbox."));
       setMode("signin");
       return;
     }
 
     const parsed = schema.safeParse({ email, password });
-    if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Check your details");
+    if (!parsed.success)
+      return setError(parsed.error.issues[0]?.message ?? t("auth.checkDetails", "Check your details"));
 
     setBusy(true);
     try {
@@ -115,7 +118,7 @@ function AuthScreen() {
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
-          toast.success("Check your email to confirm your account.");
+          toast.success(t("auth.confirmEmail", "Check your email to confirm your account."));
           setMode("signin");
         }
       } else {
@@ -138,42 +141,45 @@ function AuthScreen() {
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pt-[calc(env(safe-area-inset-top)+3rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
       <HeartLeaf animate={false} className="size-16" />
       <h1 className="mt-6 text-3xl leading-tight font-semibold tracking-tight">
-        {mode === "welcome" ? "Welcome. You made it here." : null}
-        {mode === "signup" ? "Create your account" : null}
-        {mode === "signin" ? "Welcome back" : null}
-        {mode === "forgot" ? "Reset your password" : null}
+        {mode === "welcome" ? t("auth.welcomeTitle", "Welcome. You made it here.") : null}
+        {mode === "signup" ? t("auth.signupTitle", "Create your account") : null}
+        {mode === "signin" ? t("auth.signinTitle", "Welcome back") : null}
+        {mode === "forgot" ? t("auth.forgotTitle", "Reset your password") : null}
       </h1>
       <p className="mt-3 text-base text-muted-foreground">
         {mode === "welcome"
-          ? "Your streak, flags, wins and letters stay private to you — synced securely and available offline."
-          : "Everything you write is encrypted on your device and tied to your account only."}
+          ? t(
+              "auth.welcomeSubtitle",
+              "Your streak, flags, wins and letters stay private to you — synced securely and available offline.",
+            )
+          : t("auth.otherSubtitle", "Everything you write is encrypted on your device and tied to your account only.")}
       </p>
 
       <div className="mt-8 flex flex-1 flex-col justify-between">
         {mode === "welcome" ? (
           <div className="flex flex-col gap-3 animate-rise">
             <Button className="press h-13 rounded-2xl text-base" disabled={busy} onClick={google}>
-              Continue with Google
+              {t("auth.continueGoogle", "Continue with Google")}
             </Button>
             <Button
               variant="secondary"
               className="press h-13 rounded-2xl text-base"
               onClick={() => setMode("signup")}
             >
-              Sign up with email
+              {t("auth.signupEmail", "Sign up with email")}
             </Button>
             <Button
               variant="ghost"
               className="press h-13 rounded-2xl text-base"
               onClick={() => setMode("signin")}
             >
-              I already have an account
+              {t("auth.haveAccount", "I already have an account")}
             </Button>
           </div>
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4 animate-rise" noValidate>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.emailLabel", "Email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -189,7 +195,7 @@ function AuthScreen() {
 
             {mode !== "forgot" ? (
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.passwordLabel", "Password")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -210,28 +216,32 @@ function AuthScreen() {
             ) : null}
 
             <Button type="submit" disabled={busy} className="press h-13 rounded-2xl text-base">
-              {mode === "signup" ? "Create account" : mode === "signin" ? "Sign in" : "Send reset link"}
+              {mode === "signup"
+                ? t("auth.createAccount", "Create account")
+                : mode === "signin"
+                  ? t("auth.signIn", "Sign in")
+                  : t("auth.sendResetLink", "Send reset link")}
             </Button>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <button type="button" className="press" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
-                {mode === "signin" ? "Create an account" : "I have an account"}
+                {mode === "signin" ? t("auth.createAnAccount", "Create an account") : t("auth.iHaveAccount", "I have an account")}
               </button>
               <button type="button" className="press" onClick={() => setMode("forgot")}>
-                Forgot password?
+                {t("auth.forgotPassword", "Forgot password?")}
               </button>
             </div>
           </form>
         )}
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          By continuing you agree to our{" "}
+          {t("auth.agreePrefix", "By continuing you agree to our")}{" "}
           <Link to="/terms" className="underline">
-            Terms
+            {t("auth.termsLink", "Terms")}
           </Link>{" "}
-          and{" "}
+          {t("auth.and", "and")}{" "}
           <Link to="/privacy" className="underline">
-            Privacy Policy
+            {t("auth.privacyLink", "Privacy Policy")}
           </Link>
           .
         </p>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { ActivityListScreen } from "@/components/ActivityListScreen";
 import { affirmationRepo } from "@/data/repository";
@@ -12,17 +13,20 @@ export const Route = createFileRoute("/_authenticated/affirmations")({
       { property: "og:description", content: "Your own words, saved for the moments you need them." },
     ],
   }),
-  component: () => (
-    <ActivityListScreen
-      title="Affirmations"
-      subtitle="Words that pull you back to yourself"
-      cacheKey="affirmations"
-      repo={affirmationRepo}
-      mainField="body"
-      mainPlaceholder="I am not going backwards today."
-      multiline
-      suggestions={["I deserve peace.", "This ache is temporary.", "I choose me."]}
-      emptyText="No affirmations yet — write the first one above."
-    />
-  ),
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <ActivityListScreen
+        title={t("affirmations.title")}
+        subtitle={t("affirmations.subtitle")}
+        cacheKey="affirmations"
+        repo={affirmationRepo}
+        mainField="body"
+        mainPlaceholder={t("affirmations.mainPlaceholder")}
+        multiline
+        suggestions={t("affirmations.suggestions", { returnObjects: true }) as string[]}
+        emptyText={t("affirmations.emptyText")}
+      />
+    );
+  },
 });

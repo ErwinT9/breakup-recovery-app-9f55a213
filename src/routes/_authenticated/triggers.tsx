@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { ActivityListScreen } from "@/components/ActivityListScreen";
 import { triggerRepo } from "@/data/repository";
@@ -12,18 +13,21 @@ export const Route = createFileRoute("/_authenticated/triggers")({
       { property: "og:description", content: "Spot your patterns so they stop catching you off guard." },
     ],
   }),
-  component: () => (
-    <ActivityListScreen
-      title="Triggers"
-      subtitle="Name them so they lose their grip"
-      cacheKey="triggers"
-      repo={triggerRepo}
-      mainField="title"
-      mainPlaceholder="Late nights alone"
-      noteField="note"
-      notePlaceholder="What you'll do instead (optional)"
-      suggestions={["Late nights", "Old photos", "Their song", "Drinking"]}
-      emptyText="No triggers logged yet."
-    />
-  ),
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <ActivityListScreen
+        title={t("triggers.title")}
+        subtitle={t("triggers.subtitle")}
+        cacheKey="triggers"
+        repo={triggerRepo}
+        mainField="title"
+        mainPlaceholder={t("triggers.mainPlaceholder")}
+        noteField="note"
+        notePlaceholder={t("triggers.notePlaceholder")}
+        suggestions={t("triggers.suggestions", { returnObjects: true }) as string[]}
+        emptyText={t("triggers.emptyText")}
+      />
+    );
+  },
 });
