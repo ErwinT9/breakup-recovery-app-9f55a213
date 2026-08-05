@@ -16,6 +16,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { installGlobalErrorHandlers } from "@/lib/analytics";
 import { migrateAppState } from "@/lib/appState/migrate";
+import { initTheme } from "@/lib/theme";
 import "@/lib/i18n";
 import { startNetworkWatcher } from "@/lib/offline/network";
 import { startSyncEngine } from "@/lib/offline/syncQueue";
@@ -148,6 +149,7 @@ function RootComponent() {
     void migrateAppState();
     startNetworkWatcher();
     startSyncEngine();
+    return initTheme();
   }, []);
 
   return (

@@ -9,6 +9,7 @@ import {
   Download,
   Globe,
   Image as ImageIcon,
+  Moon,
   RefreshCw,
   Trash2,
   Upload,
@@ -19,6 +20,10 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { SoftCard } from "@/components/SoftCard";
+import { AvatarCropper } from "@/components/AvatarCropper";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useTheme } from "@/hooks/useTheme";
+import type { ThemeMode } from "@/lib/theme";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -28,7 +33,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +52,7 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { pickAvatar } from "@/lib/avatar";
+import { pickImageSource } from "@/lib/avatar";
 import { LANGUAGES, setLanguage, type LanguageCode } from "@/lib/i18n";
 import { haptic } from "@/lib/native/haptics";
 import { storage } from "@/lib/native/storage";
@@ -114,6 +118,7 @@ function SettingsScreen() {
   const queryClient = useQueryClient();
   const { online, pending } = useNetworkStatus();
   const { isPremium } = useSubscription();
+  const theme = useTheme();
 
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -125,6 +130,7 @@ function SettingsScreen() {
   const [password, setPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [cropSource, setCropSource] = useState<string | null>(null);
 
   useEffect(() => {
     analytics.screen("settings");
@@ -212,10 +218,24 @@ function SettingsScreen() {
     haptic.light();
     setPhotoBusy(true);
     try {
-      const dataUrl = await pickAvatar();
-      if (!dataUrl) return;
+      const source = await pickImageSource();
+      if (!source) return;
+      setCropSource(source);
+    } catch {
+      toastOnce("avatar-failed", t("toast.photoFailed"), "error");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  /** Persists the cropped square image and refreshes every avatar in the app. */
+  const saveCroppedPhoto = async (dataUrl: string) => {
+    setPhotoBusy(true);
+    try {
       setAvatar(dataUrl);
       await update.mutateAsync({ avatar_url: dataUrl });
+      await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      setCropSource(null);
       toastOnce("avatar-updated", t("toast.photoUpdated"), "success");
     } catch {
       toastOnce("avatar-failed", t("toast.photoFailed"), "error");
@@ -228,6 +248,7 @@ function SettingsScreen() {
     haptic.light();
     setAvatar("");
     await update.mutateAsync({ avatar_url: null });
+    await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
     toastOnce("avatar-removed", t("toast.photoRemoved"), "success");
   };
 
@@ -314,12 +335,12 @@ function SettingsScreen() {
             description={t("settings.editProfileDesc")}
           />
           <div className="flex items-center gap-4">
-            <Avatar className="size-16">
-              {avatar ? <AvatarImage src={avatar} alt={t("settings.profilePhoto")} /> : null}
-              <AvatarFallback className="bg-mint text-on-tint">
-                {(name || "N").slice(0, 1).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              src={avatar || null}
+              name={name}
+              alt={t("settings.profilePhoto")}
+              className="size-16 text-xl"
+            />
             <div className="flex-1 space-y-2">
               <p className="flex items-center gap-2 text-sm font-medium">
                 <ImageIcon className="size-4" aria-hidden /> {t("settings.profilePhoto")}
@@ -462,6 +483,32 @@ function SettingsScreen() {
             title={t("settings.language")}
             description={t("settings.languageDesc")}
           />
+        </SoftCard>
+
+        <SoftCard className="space-y-3">
+          <Row
+            icon={Moon}
+            title={t("settings.appearance")}
+            description={t("settings.appearanceDesc")}
+          />
+          <Select value={theme.mode} onValueChange={(value) => theme.setMode(value as ThemeMode)}>
+            <SelectTrigger className="h-12 rounded-2xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">{t("settings.themeLight")}</SelectItem>
+              <SelectItem value="dark">{t("settings.themeDark")}</SelectItem>
+              <SelectItem value="system">{t("settings.themeSystem")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </SoftCard>
+
+        <SoftCard className="space-y-3">
+          <Row
+            icon={Globe}
+            title={t("settings.language")}
+            description={t("settings.languageDesc")}
+          />
           <Select
             value={i18n.language as LanguageCode}
             onValueChange={(value) => {
@@ -540,6 +587,14 @@ function SettingsScreen() {
           Delete account
         </Button>
       </main>
+
+      <AvatarCropper
+        open={Boolean(cropSource)}
+        source={cropSource}
+        busy={photoBusy}
+        onCancel={() => setCropSource(null)}
+        onCropped={saveCroppedPhoto}
+      />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="rounded-3xl">
