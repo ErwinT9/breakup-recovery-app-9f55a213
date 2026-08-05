@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { analytics } from "@/lib/analytics";
 import { activity } from "@/lib/badgeActivity";
 import { AFFIRMATIONS, GROUNDING_STEPS } from "@/lib/content";
-import { ROTATION_MS, getRotatingQuote, rotationSlot } from "@/lib/dailyQuote";
+import { getRotatingQuote, rotationSlot } from "@/lib/dailyQuote";
 import { haptic } from "@/lib/native/haptics";
 import { sosEncouragement } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
@@ -112,10 +112,6 @@ export function SosToolkit({
   });
 
   const breatheLeft = useCountdown(60, open && tool === "breathe");
-  const affirmation = useMemo(
-    () => AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)],
-    [tool],
-  );
   const [quote, setQuote] = useState<string | null>(null);
   useEffect(() => {
     if (!open) return;
@@ -282,9 +278,6 @@ export function SosToolkit({
           {tool === "urge" ? (
             <SoftCard className="py-4">
               <PopIt onDone={() => onOpenChange(false)} />
-              <p className="mt-4 rounded-2xl bg-lavender p-4 text-center text-sm text-on-tint">
-                {affirmation}
-              </p>
             </SoftCard>
           ) : null}
 
