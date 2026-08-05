@@ -132,28 +132,40 @@ export function useBadges(options: { autoUnlock?: boolean } = {}): BadgeState {
 
   const announced = useRef(false);
   useEffect(() => {
-    if (!autoUnlock || !enabled) return;
+    if (!autoUnlock || !enabled || unlockInFlight) return;
     const keys = earnedBadgeKeys(stats);
-    const fresh = keys.filter((key) => !owned.has(key));
+    const fresh = keys.filter(
+      (key) => !owned.has(key) && !announcedKeys.has(`${userId}:${key}`),
+    );
     if (fresh.length === 0) {
       announced.current = true;
       return;
     }
     const isFirstLoad = !announced.current && owned.size === 0;
     announced.current = true;
-    void badgeRepo.unlock(userId, keys).then((rows) => {
-      queryClient.setQueryData(["badges", userId], rows);
-      if (isFirstLoad) return;
-      const named = fresh.map((key) => badgeByKey(key)?.label).filter(Boolean) as string[];
-      if (named.length === 0) return;
-      void celebrate();
-      toast(
-        named.length === 1
-          ? `🎉 Badge unlocked: ${named[0]}`
-          : `🎉 ${named.length} badges unlocked: ${named.join(", ")}`,
-      );
-    });
-  }, [autoUnlock, enabled, stats, owned, userId, queryClient]);
+    // Claim the keys synchronously so a parallel mount can't announce them too.
+    fresh.forEach((key) => announcedKeys.add(`${userId}:${key}`));
+    unlockInFlight = true;
+    void badgeRepo
+      .unlock(userId, keys)
+      .then((rows) => {
+        queryClient.setQueryData(["badges", userId], rows);
+        if (isFirstLoad) return;
+        const named = fresh.map((key) => badgeByKey(key)?.label).filter(Boolean) as string[];
+        if (named.length === 0) return;
+        const id = `badge:${fresh.slice().sort().join("|")}`;
+        onceWithin(id, () => void celebrate());
+        toastOnce(
+          id,
+          named.length === 1
+            ? t("toast.badgeUnlocked", { name: named[0] })
+            : t("toast.badgesUnlocked", { count: named.length, names: named.join(", ") }),
+        );
+      })
+      .finally(() => {
+        unlockInFlight = false;
+      });
+  }, [autoUnlock, enabled, stats, owned, userId, queryClient, t]);
 
   const unlockedCount = progress.filter(
     (item) => item.unlocked || owned.has(item.badge.key),
