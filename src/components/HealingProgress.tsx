@@ -23,11 +23,8 @@ function formatDuration(ms: number, compactUnderDays = 2): string {
   return hours === 0 ? `${days}d` : `${days}d ${hours}h`;
 }
 
-function progressMessage(percent: number, remainingMs: number, label: string): string {
-  const remaining = formatDuration(remainingMs);
-  if (percent >= 75) return `You're almost there — ${remaining} to go.`;
-  if (percent >= 45) return `You're ${percent}% of the way to ${label}.`;
-  return `Keep going. ${remaining} left to unlock your next badge.`;
+function progressMessage(remainingMs: number): string {
+  return `Keep going! ${formatDuration(remainingMs)} to unlock your next badge.`;
 }
 
 /** Streak progress toward the next milestone badge. Badge system is the source of truth. */
@@ -93,11 +90,8 @@ export function HealingProgress({
             </div>
               <span className="text-xs tabular-nums text-muted-foreground">{percent}%</span>
             </div>
-            <p className="mt-2 text-sm tabular-nums text-muted-foreground">
-              {formatDuration(remainingMs)} remaining
-            </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              {progressMessage(percent, remainingMs, `${next.days}-Day Badge`)}
+              {progressMessage(remainingMs)}
             </p>
           </>
         ) : (
