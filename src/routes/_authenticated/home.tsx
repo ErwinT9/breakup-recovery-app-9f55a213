@@ -34,7 +34,7 @@ import {
 } from "@/data/repository";
 import { MoodCheckIn, type MoodCheckInResult } from "@/components/MoodCheckIn";
 import { useAuth } from "@/hooks/useAuth";
-import { useDailyQuote } from "@/hooks/useDailyQuote";
+import { useDailyQuote, useRotatingHomeQuote } from "@/hooks/useDailyQuote";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { activity } from "@/lib/badgeActivity";
 import { celebrate } from "@/lib/celebrate";
@@ -94,6 +94,7 @@ function HomeScreen() {
   const queryClient = useQueryClient();
   useTick();
   const dailyQuote = useDailyQuote();
+  const rotatingQuote = useRotatingHomeQuote();
 
   useEffect(() => {
     analytics.screen("home");
@@ -312,8 +313,8 @@ function HomeScreen() {
         <SoftCard className="bg-sky">
           <div className="flex items-start gap-3">
             <Sparkles className="mt-0.5 size-5 text-on-tint" aria-hidden />
-            <p className="text-sm text-on-tint">
-              The urge to reach out fades faster every single day.
+            <p key={rotatingQuote} className="animate-fade-in text-sm text-on-tint">
+              {rotatingQuote}
             </p>
           </div>
         </SoftCard>

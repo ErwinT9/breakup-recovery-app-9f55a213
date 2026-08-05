@@ -147,3 +147,44 @@ export function getRandomQuote(exclude?: string | null): string {
   }
   return DAILY_QUOTES[0] as string;
 }
+
+const HOME_ROTATING_KEY = "nc:home-rotating-quote";
+
+type HomeRotatingState = { slot: number; index: number; bag: number[] };
+
+function readHomeRotating(): HomeRotatingState | null {
+  try {
+    const raw = window.localStorage.getItem(HOME_ROTATING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as HomeRotatingState;
+    if (typeof parsed?.slot !== "number" || typeof parsed?.index !== "number") return null;
+    return { slot: parsed.slot, index: parsed.index, bag: Array.isArray(parsed.bag) ? parsed.bag : [] };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Home screen quote: changes every 2 hours, random but drawn from a shuffled
+ * bag so no quote repeats until the whole library has been shown. Persisted
+ * locally, so it stays stable for the slot and works fully offline.
+ */
+export function getHomeRotatingQuote(date = new Date()): string {
+  const slot = rotationSlot(date);
+  const existing = readHomeRotating();
+  if (existing && existing.slot === slot && DAILY_QUOTES[existing.index]) {
+    return DAILY_QUOTES[existing.index] as string;
+  }
+
+  let bag = existing?.bag ?? [];
+  if (bag.length === 0) bag = shuffledBag(DAILY_QUOTES.length);
+  const next = bag.shift();
+  const index = typeof next === "number" && DAILY_QUOTES[next] ? next : 0;
+
+  try {
+    window.localStorage.setItem(HOME_ROTATING_KEY, JSON.stringify({ slot, index, bag }));
+  } catch {
+    /* storage unavailable — quote still renders for this session */
+  }
+  return DAILY_QUOTES[index] as string;
+}
