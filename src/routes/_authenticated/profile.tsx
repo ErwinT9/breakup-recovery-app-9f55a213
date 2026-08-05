@@ -7,7 +7,7 @@ import {
   Cloud,
   Crown,
   Download,
-  Globe,
+
   Image as ImageIcon,
   Moon,
   RefreshCw,
@@ -79,7 +79,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { title: "Settings | No Contact Tracker" },
       {
         name: "description",
-        content: "Manage your profile, reminders, language, backup and account.",
+        content: "Manage your profile, reminders, backup and account.",
       },
       { property: "og:title", content: "Settings | No Contact Tracker" },
       { property: "og:description", content: "Your account, reminders and privacy settings." },
@@ -116,7 +116,7 @@ function Row({
 }
 
 function SettingsScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const userId = user?.id ?? "";
   const navigate = useNavigate();
