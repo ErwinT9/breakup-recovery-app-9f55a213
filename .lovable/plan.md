@@ -1,61 +1,58 @@
-# Firebase Auth + Native Android Hardening
+# Native Google Sign-In Deep Link for the Android APK
 
-Goal: replace Supabase Auth with Firebase Auth (native Google picker + email/password), keep Supabase purely as the database keyed by Firebase UID, and tighten the app for a real Play Store Android build. Existing code is upgraded, not rebuilt.
+Right now the Google button always sends Supabase a browser redirect back to `window.location.origin/auth`. Inside the APK that origin is the published Lovable site, so after consent Google hands the session to the website in Chrome and the app never hears about it. Fix is to give the native build its own deep-link callback and finish the sign-in inside the app. The web flow is untouched.
 
-Because this touches sign-in, every table's ownership column, and the whole native shell, it ships in four stages so the app is never left half-broken.
+## What changes
 
-## Stage 1 — Database re-keying
+**1. A dedicated OAuth helper (`src/lib/auth/oauthNative.ts`)**
 
-Today every table stores the owner as a Supabase `auth.users` UUID and `profiles.id` has a foreign key into `auth.users`. Firebase UIDs are short text strings, so those columns must become text.
+One `signInWithGoogle()` used by the auth screen, branching on platform:
 
-- Drop the `profiles -> auth.users` foreign key and the `handle_new_user` trigger on `auth.users`.
-- Convert `profiles.id` and every `user_id` column (journal, wins, flags, badges, letters, pictures, rituals, triggers, affirmations, streaks, mood check-ins, daily promises, questionnaire, push tokens) from uuid to text. Existing rows keep their old UUID as text, so nothing is lost.
-- Add `profiles.email` so old rows can be adopted by the matching Firebase account.
-- Rewrite every RLS policy to compare against the Firebase UID carried in the request token instead of `auth.uid()`, and re-issue the required grants.
-- Same treatment for the `activity-pictures` storage policies.
+- **Web / Lovable preview**: exactly today's behaviour — `signInWithOAuth` with `redirectTo: ${origin}/auth`, full-page redirect.
+- **Android (Capacitor)**: request the URL with `skipBrowserRedirect: true` and `redirectTo: app.lovable.nocontacttracker://auth-callback`, open that URL in a Custom Tab via the `@capacitor/browser` plugin, then wait for the deep link.
 
-Existing accounts are preserved: the first time someone signs in with Firebase using the same email address as an old profile, their old rows are re-pointed to the new Firebase UID automatically. Accounts with no email match simply start fresh.
+**2. Deep-link listener**
 
-## Stage 2 — Firebase Authentication
+A single `App.addListener("appUrlOpen", …)` registered once at app start. When a URL matching the app scheme arrives it:
+- closes the Custom Tab (`Browser.close()`),
+- hands the callback to Supabase — `exchangeCodeForSession` for a PKCE `?code=`, or `setSession` for an implicit `#access_token/#refresh_token` payload,
+- shows a friendly toast on `error_description` instead of leaving the user stranded,
+- lets the existing auth-state listener route to Home.
 
-- Add Firebase (`firebase` JS SDK + `@capacitor-firebase/authentication`) and register the Android plugin.
-- Native Google Sign-In: on Android the plugin opens the system Google account picker — no Chrome, no Custom Tab, no Supabase OAuth page. On web the same call falls back to a standard popup so the Lovable preview keeps working.
-- Email/password sign-up and sign-in, forgot-password email, and email verification, all through Firebase.
-- Rewrite `useAuth` around Firebase's auth state listener: it exposes the Firebase user, the ID token, loading state and sign-out. Session restore is instant from Firebase's own persisted credential, so an already-signed-in user goes straight Splash → Home with no auth flash.
-- The Supabase client is recreated with an `accessToken` callback that hands it the current Firebase ID token (auto-refreshed), so RLS keeps working directly from the client with no server round trip.
-- Delete the Supabase auth surfaces: OAuth hash handling, the Supabase `/reset-password` recovery route, the bearer attacher, and the Supabase-session auth gate (replaced with a Firebase-session gate).
-- After each successful sign-in, upsert the Supabase `profiles` row from the Firebase identity (uid, email, display name, photo) and run the email-adoption step above.
-- Account deletion and log-out are rewritten to delete/sign out of Firebase and then clear Supabase rows and local caches.
+Also handles the case where the user swipes the Custom Tab away: on app resume with no session, the pending sign-in is cancelled and the button becomes usable again (no infinite spinner).
 
-### Console steps you must do (blocking)
+**3. Supabase client config**
 
-The code cannot work until these are done; exact values will be listed in `ANDROID.md`:
-1. Firebase Console: enable Google and Email/Password providers.
-2. Add the Android app with your package name and both debug and release SHA-1/SHA-256 fingerprints, then download a fresh `google-services.json`.
-3. Supabase Dashboard → Authentication → Sign In / Providers → Third Party Auth: add Firebase with your Firebase project ID. Without this, Supabase rejects the Firebase token and every read fails.
+Switch the browser client to PKCE (`flowType: "pkce"`) and keep `detectSessionInUrl` on for web. PKCE is what makes the deep-link callback exchangeable inside the app and is also safer on web; the existing email/password and reset-password flows are unaffected.
 
-## Stage 3 — Offline-first and sync
+**4. Android configuration**
 
-- One local cache layer over Capacitor Preferences holding profile, streak, journal, flags, wins, badges, letters, settings, notification prefs and theme, so all read screens render instantly from cache and then refresh.
-- All writes go through the existing sync queue: applied locally first, queued when offline, flushed automatically when the network returns, with retry/backoff and last-write-wins conflict resolution on `updated_at`.
-- A persistent "Offline mode" banner replaces error toasts when there's no connection; nothing hard-fails.
+- Add the custom scheme intent filter to `MainActivity` in `AndroidManifest.xml` (`BROWSABLE` + `DEFAULT`, scheme `app.lovable.nocontacttracker`, host `auth-callback`). The activity is already `singleTask`, so the callback reuses the running app rather than starting a second copy.
+- Add `@capacitor/browser` and sync it into the native project.
 
-## Stage 4 — Native feel and performance
+**5. Dependencies and docs**
 
-- Firebase Cloud Messaging for all push (daily motivation, morning/evening reminders, streak, milestone, weekly progress, journal, SOS), with Android notification channels, silent-notification support, respect for saved preferences, and deep links that route straight to the right screen.
-- Android back button handling (back navigates, double-back exits from Home), keyboard resize handling, safe areas, locked portrait orientation, native splash into the app with no white flash, and lifecycle-aware refresh on resume.
-- Performance pass: route-level code splitting and lazy loading of heavy screens (cropper, breathing, Pop It, badges), memoized lists and derived values, debounced text saves, capped and cached images, timers cleaned up on unmount, and batched Supabase reads on Home instead of many parallel ones.
-- Skeleton loaders, empty/error/offline states, haptics on key actions, pull-to-refresh on list screens.
-- Cleanup: remove dead Supabase-auth code, unused dependencies, and duplicated data-fetching logic.
+`@capacitor/browser` installed; `ANDROID.md` updated with the redirect URL to register and a note to re-run `bun run sync:android`.
 
-## Technical notes
+## Console step you must do (blocking)
 
-- Supabase client auth switches from `persistSession` to a stateless `accessToken: () => firebaseIdToken` provider; no Supabase session is ever created again.
-- RLS predicate becomes `((auth.jwt() ->> 'sub') = user_id)` scoped to the `authenticated` role, matching Supabase's Firebase third-party auth mapping.
-- The `_authenticated` layout stays `ssr: false` and gates on the Firebase user instead of `supabase.auth.getUser()`.
-- Server functions that used `requireSupabaseAuth` (account deletion) switch to verifying the Firebase ID token against Google's public keys, then acting with the service-role client.
-- Web/preview stays functional throughout: Firebase web SDK popup sign-in in browsers, native plugin on Android.
+Supabase Dashboard → Authentication → URL Configuration → **Redirect URLs**, add:
+
+```text
+app.lovable.nocontacttracker://auth-callback
+```
+
+Keep the existing `https://breakup-recovery-app.lovable.app/**` entry so web keeps working. Nothing changes in the Google Cloud console — Google still redirects to your Supabase callback; only the final hop back from Supabase changes.
+
+## What stays the same
+
+- Email/password sign-in, sign-up and password reset.
+- The web Google flow and its `/auth` return handling, including the `#`-stripping fix.
+- The `_authenticated` route gate and session persistence.
 
 ## Verification
 
-At the end of each stage: a brand-new Google account, a brand-new email/password account, and an existing account (email-matched) must all reach Home with identical UI, correct data, working offline read/write, and no browser redirect during sign-in.
+- **Web preview**: Google button still redirects through the browser and lands on Home with a clean URL.
+- **Android APK** (needs a rebuild after sync): tapping Continue with Google opens a Custom Tab, and after choosing the account the tab closes on its own, the app comes to the foreground signed in, and Chrome is never left showing the Lovable website.
+
+Note: I can verify the web path here, but the APK path can only be confirmed on a device build on your side — I'll flag exactly what to look for.
