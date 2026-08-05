@@ -31,6 +31,7 @@ export function AppShell({
   action?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { t } = useTranslation();
   const [sosOpen, setSosOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -88,7 +89,7 @@ export function AppShell({
         aria-label="Primary"
         className="surface-blur fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-md items-center justify-around border-t border-border px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
       >
-        {TABS.map(({ to, label, icon: Icon }) => {
+        {TABS.map(({ to, i18nKey, icon: Icon }) => {
           const active = pathname === to;
           const isFlags = to === "/flags";
           return (
@@ -116,7 +117,7 @@ export function AppShell({
                   aria-hidden
                 />
               </span>
-              {label}
+              {t(i18nKey)}
             </Link>
           );
         })}
