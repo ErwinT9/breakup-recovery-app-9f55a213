@@ -504,6 +504,11 @@ function SettingsScreen() {
         </SoftCard>
 
         <SoftCard className="space-y-3">
+          <Row
+            icon={Globe}
+            title={t("settings.language")}
+            description={t("settings.languageDesc")}
+          />
           <Select
             value={i18n.language as LanguageCode}
             onValueChange={(value) => {
