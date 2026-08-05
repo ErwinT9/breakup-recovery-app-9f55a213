@@ -588,7 +588,6 @@ function SettingsScreen() {
         </Button>
       </main>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
       <AvatarCropper
         open={Boolean(cropSource)}
         source={cropSource}
@@ -597,6 +596,7 @@ function SettingsScreen() {
         onCropped={saveCroppedPhoto}
       />
 
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete account?</AlertDialogTitle>
