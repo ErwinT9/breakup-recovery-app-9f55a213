@@ -127,7 +127,10 @@ function SettingsScreen() {
   const [notifs, setNotifs] = useState<NotifPrefs>(DEFAULT_NOTIFS);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [password, setPassword] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [finalOpen, setFinalOpen] = useState(false);
+  const [deletedOpen, setDeletedOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const [deleting, setDeleting] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cropSource, setCropSource] = useState<string | null>(null);
@@ -279,35 +282,40 @@ function SettingsScreen() {
   };
 
   const deleteAccount = async () => {
-    if (!user?.email) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password,
-      });
-      if (error) throw error;
-      await Promise.all([
-        supabase.from("flags").delete().eq("user_id", userId),
-        supabase.from("wins").delete().eq("user_id", userId),
-        supabase.from("badges").delete().eq("user_id", userId),
-        supabase.from("letters").delete().eq("user_id", userId),
-        supabase.from("streaks").delete().eq("user_id", userId),
-        supabase.from("questionnaire_answers").delete().eq("user_id", userId),
-      ]);
-      await supabase.from("profiles").delete().eq("id", userId);
+      await deleteMyAccount();
       await clearUserCache(userId);
+      await queryClient.cancelQueries();
       queryClient.clear();
       await signOut();
-      toast.success("Your account data was deleted.");
-      void navigate({ to: "/auth", replace: true });
+      await clearAllLocalData();
+      setFinalOpen(false);
+      setDeleteOpen(false);
+      setCountdown(5);
+      setDeletedOpen(true);
     } catch (error) {
       toast.error(humanizeError(error));
     } finally {
       setDeleting(false);
-      setPassword("");
+      setConfirmText("");
     }
   };
+
+  useEffect(() => {
+    if (!deletedOpen) return;
+    const timer = window.setInterval(() => {
+      setCountdown((value) => {
+        if (value <= 1) {
+          window.clearInterval(timer);
+          void navigate({ to: "/auth", replace: true });
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [deletedOpen, navigate]);
 
   return (
     <div className="animate-in slide-in-from-right-6 fade-in mx-auto flex min-h-screen w-full max-w-md flex-col duration-300">
