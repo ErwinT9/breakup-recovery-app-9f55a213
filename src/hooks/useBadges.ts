@@ -34,10 +34,19 @@ import {
   type BadgeStats,
 } from "@/lib/badges";
 import { celebrate } from "@/lib/celebrate";
+import { onceWithin, toastOnce } from "@/lib/toastOnce";
 import { daysSince } from "@/lib/streak";
 
 const EMPTY_ACTIVITY = getActivity();
 const EMPTY_LIST: never[] = [];
+
+/**
+ * Module-level so every mount of this hook (Home + Badges) shares one record
+ * of what has already been announced. Without it the same unlock is toasted
+ * once per mounted screen and again on every StrictMode effect replay.
+ */
+const announcedKeys = new Set<string>();
+let unlockInFlight = false;
 
 /** Reactive view of the local activity counters. */
 export function useActivity(): ActivityState {
