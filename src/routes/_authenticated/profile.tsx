@@ -457,24 +457,27 @@ function SettingsScreen() {
         </SoftCard>
 
         <SoftCard className="space-y-3">
-          <Row icon={Globe} title="Language" description="App language" />
+          <Row
+            icon={Globe}
+            title={t("settings.language")}
+            description={t("settings.languageDesc")}
+          />
           <Select
-            value={language}
+            value={i18n.language as LanguageCode}
             onValueChange={(value) => {
-              setLanguage(value);
-              void storage.set("nc:language", value);
-              toast.success("Language preference saved.");
+              void setLanguage(value as LanguageCode);
+              toastOnce("language-saved", t("toast.languageSaved"), "success");
             }}
           >
             <SelectTrigger className="h-12 rounded-2xl">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-              <SelectItem value="fr">Français</SelectItem>
-              <SelectItem value="de">Deutsch</SelectItem>
-              <SelectItem value="hi">हिन्दी</SelectItem>
+            <SelectContent className="max-h-72">
+              {LANGUAGES.map((entry) => (
+                <SelectItem key={entry.code} value={entry.code}>
+                  {entry.nativeLabel}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </SoftCard>
@@ -527,41 +530,6 @@ function SettingsScreen() {
             <p className="font-medium text-on-tint">Premium active</p>
           </SoftCard>
         )}
-
-        <SoftCard className="space-y-2">
-          <Link to="/letters" className="press flex items-center gap-3 py-2">
-            <Mail className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Unsent letters</span>
-          </Link>
-          <Link to="/privacy" className="press flex items-center gap-3 py-2">
-            <ShieldCheck className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Privacy policy</span>
-          </Link>
-          <Link to="/terms" className="press flex items-center gap-3 py-2">
-            <ShieldCheck className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Terms of service</span>
-          </Link>
-          <button
-            type="button"
-            className="press flex w-full items-center gap-3 py-2 text-left"
-            disabled={busy}
-            onClick={() => void restore()}
-          >
-            <RefreshCw className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Restore purchases</span>
-          </button>
-          <button
-            type="button"
-            className="press flex w-full items-center gap-3 py-2 text-left"
-            onClick={() => {
-              haptic.light();
-              setLogoutOpen(true);
-            }}
-          >
-            <LogOut className="size-5 text-muted-foreground" aria-hidden />
-            <span className="flex-1 text-sm font-medium">Log out</span>
-          </button>
-        </SoftCard>
 
         <Button
           variant="ghost"
