@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { activity } from "@/lib/badgeActivity";
+import { getRandomQuote } from "@/lib/dailyQuote";
 import { haptic } from "@/lib/native/haptics";
 import { cn } from "@/lib/utils";
 
 const DURATION = 60;
-const TINTS = ["bg-mint", "bg-sky", "bg-lavender", "bg-blush", "bg-sand"];
+const TINTS = ["bg-bubble-1", "bg-bubble-2", "bg-bubble-3", "bg-bubble-4", "bg-bubble-5"];
 const ENCOURAGEMENTS = [
   "Keep going.",
   "You're doing great.",
@@ -20,6 +21,8 @@ export function PopIt({ onDone }: { onDone: () => void }) {
   const [left, setLeft] = useState(DURATION);
   const [popped, setPopped] = useState<Record<number, boolean>>({});
   const [count, setCount] = useState(0);
+  const [affirmation, setAffirmation] = useState(() => getRandomQuote());
+  const [affirmationKey, setAffirmationKey] = useState(0);
 
   const cells = useMemo(
     () => Array.from({ length: 36 }, (_, i) => TINTS[i % TINTS.length] as string),
@@ -83,11 +86,11 @@ export function PopIt({ onDone }: { onDone: () => void }) {
             aria-label="Pop"
             onPointerDown={() => pop(index)}
             className={cn(
-              "aspect-square rounded-full transition-transform duration-200 ease-out",
+              "aspect-square rounded-full ring-1 ring-black/5 transition-transform duration-200 ease-out",
               tint,
               popped[index]
                 ? "scale-90 opacity-50 shadow-inner"
-                : "scale-100 shadow-sm hover:scale-105",
+                : "scale-100 shadow-md hover:scale-105",
             )}
           />
         ))}
@@ -96,6 +99,26 @@ export function PopIt({ onDone }: { onDone: () => void }) {
       <p className="mt-5 text-sm text-muted-foreground animate-fade-in" key={message}>
         {message}
       </p>
+
+      <div className="mt-4 w-full">
+        <p
+          key={affirmationKey}
+          className="animate-fade-in rounded-2xl bg-lavender p-4 text-center text-sm text-on-tint"
+        >
+          {affirmation}
+        </p>
+        <Button
+          variant="secondary"
+          className="press mt-3 h-11 w-full rounded-2xl"
+          onClick={() => {
+            haptic.select();
+            setAffirmation((prev) => getRandomQuote(prev));
+            setAffirmationKey((k) => k + 1);
+          }}
+        >
+          Tap to Affirm
+        </Button>
+      </div>
     </div>
   );
 }
