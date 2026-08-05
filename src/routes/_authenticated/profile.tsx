@@ -7,7 +7,7 @@ import {
   Cloud,
   Crown,
   Download,
-  Globe,
+
   Image as ImageIcon,
   Moon,
   RefreshCw,
@@ -53,7 +53,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { pickImageSource } from "@/lib/avatar";
-import { LANGUAGES, setLanguage, type LanguageCode } from "@/lib/i18n";
 import { haptic } from "@/lib/native/haptics";
 import { clearAllLocalData, storage } from "@/lib/native/storage";
 import { deleteMyAccount } from "@/lib/account.functions";
@@ -80,7 +79,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { title: "Settings | No Contact Tracker" },
       {
         name: "description",
-        content: "Manage your profile, reminders, language, backup and account.",
+        content: "Manage your profile, reminders, backup and account.",
       },
       { property: "og:title", content: "Settings | No Contact Tracker" },
       { property: "og:description", content: "Your account, reminders and privacy settings." },
@@ -117,7 +116,7 @@ function Row({
 }
 
 function SettingsScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const userId = user?.id ?? "";
   const navigate = useNavigate();
@@ -585,32 +584,6 @@ function SettingsScreen() {
               <SelectItem value="light">{t("settings.themeLight")}</SelectItem>
               <SelectItem value="dark">{t("settings.themeDark")}</SelectItem>
               <SelectItem value="system">{t("settings.themeSystem")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </SoftCard>
-
-        <SoftCard className="space-y-3">
-          <Row
-            icon={Globe}
-            title={t("settings.language")}
-            description={t("settings.languageDesc")}
-          />
-          <Select
-            value={i18n.language as LanguageCode}
-            onValueChange={(value) => {
-              void setLanguage(value as LanguageCode);
-              toastOnce("language-saved", t("toast.languageSaved"), "success");
-            }}
-          >
-            <SelectTrigger className="h-12 rounded-2xl">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-72">
-              {LANGUAGES.map((entry) => (
-                <SelectItem key={entry.code} value={entry.code}>
-                  {entry.label}
-                </SelectItem>
-              ))}
             </SelectContent>
           </Select>
         </SoftCard>
