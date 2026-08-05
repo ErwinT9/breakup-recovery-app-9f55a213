@@ -1,5 +1,5 @@
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
+import { initReactI18next, setI18n } from "react-i18next";
 
 import { storage } from "@/lib/native/storage";
 
@@ -67,6 +67,21 @@ if (!i18n.isInitialized) {
   };
 
   void i18n.use(initReactI18next).init(initOptions as Parameters<typeof i18n.init>[0]);
+
+  // Belt and braces: when the module graph is code-split, a component chunk can
+  // evaluate its own copy of react-i18next before this side-effect module runs
+  // its `use(initReactI18next)` (symptom: NO_I18NEXT_INSTANCE + raw keys shown).
+  // Setting the default instance explicitly makes the order irrelevant.
+  setI18n(i18n);
+
+  if (import.meta.env.DEV) {
+    console.info("[i18n] initialized", {
+      language: i18n.language,
+      initialized: i18n.isInitialized,
+      namespaces: Object.keys(i18n.services.resourceStore.data[i18n.language] ?? {}),
+      sampleKey: i18n.t("nav.home"),
+    });
+  }
 
   // Native builds keep the preference in Capacitor Preferences, which is async.
   void storage.get<string | null>(LANGUAGE_KEY, null).then((value) => {

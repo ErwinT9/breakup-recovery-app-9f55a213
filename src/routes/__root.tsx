@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { I18nextProvider } from "react-i18next";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -18,7 +19,7 @@ import { installGlobalErrorHandlers } from "@/lib/analytics";
 import { migrateAppState } from "@/lib/appState/migrate";
 import { initNativeOAuthListeners } from "@/lib/auth/oauthNative";
 import { initTheme } from "@/lib/theme";
-import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { startNetworkWatcher } from "@/lib/offline/network";
 import { startSyncEngine } from "@/lib/offline/syncQueue";
 
@@ -156,13 +157,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <I18nextProvider i18n={i18n} defaultNS="translation">
+        <AuthProvider>
         <SubscriptionProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster position="top-center" />
         </SubscriptionProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </I18nextProvider>
     </QueryClientProvider>
   );
 }
