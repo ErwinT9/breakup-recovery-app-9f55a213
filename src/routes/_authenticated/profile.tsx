@@ -475,7 +475,7 @@ function SettingsScreen() {
             <SelectContent className="max-h-72">
               {LANGUAGES.map((entry) => (
                 <SelectItem key={entry.code} value={entry.code}>
-                  {entry.nativeLabel}
+                  {entry.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -572,35 +572,6 @@ function SettingsScreen() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <AlertDialogContent className="rounded-3xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Log Out</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to log out?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
-            <Button
-              className="rounded-2xl"
-              onClick={async () => {
-                haptic.light();
-                try {
-                  await queryClient.cancelQueries();
-                  queryClient.clear();
-                  await clearUserCache(userId);
-                  await signOut();
-                  toast.success("Logged out successfully.");
-                  void navigate({ to: "/auth", replace: true });
-                } catch (error) {
-                  toast.error(humanizeError(error));
-                }
-              }}
-            >
-              Log Out
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
