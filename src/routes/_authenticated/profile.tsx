@@ -208,11 +208,7 @@ function SettingsScreen() {
       avatar_url: avatar.trim() || null,
     });
     if (recovery && streak.data) {
-      const next = await streakRepo.setStart(
-        userId,
-        streak.data,
-        new Date(recovery).toISOString(),
-      );
+      const next = await streakRepo.setStart(userId, streak.data, new Date(recovery).toISOString());
       queryClient.setQueryData(["streak", userId], next);
     }
     toastOnce("profile-saved", t("toast.saved"), "success");
@@ -556,7 +552,9 @@ function SettingsScreen() {
             description={online ? "Connected" : "Offline mode — changes save on this device"}
           />
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>Status: {online ? (pending > 0 ? "Syncing" : "Up to date") : "Waiting for network"}</li>
+            <li>
+              Status: {online ? (pending > 0 ? "Syncing" : "Up to date") : "Waiting for network"}
+            </li>
             <li>Pending uploads: {pending}</li>
             <li>Last sync: {lastSync ? new Date(lastSync).toLocaleString() : "Not yet"}</li>
           </ul>
@@ -689,7 +687,6 @@ function SettingsScreen() {
           </p>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }
