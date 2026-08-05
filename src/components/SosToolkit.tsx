@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CircleDot, Flag as FlagIcon, Mail, Sparkles, Trophy, Wind } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SoftCard } from "@/components/SoftCard";
 import { PopIt } from "@/components/PopIt";
@@ -10,7 +10,7 @@ import { flagRepo, letterRepo, winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics } from "@/lib/analytics";
 import { activity } from "@/lib/badgeActivity";
-import { AFFIRMATIONS, GROUNDING_STEPS } from "@/lib/content";
+import { GROUNDING_STEPS } from "@/lib/content";
 import { getRotatingQuote, rotationSlot } from "@/lib/dailyQuote";
 import { haptic } from "@/lib/native/haptics";
 import { sosEncouragement } from "@/lib/notifications";
