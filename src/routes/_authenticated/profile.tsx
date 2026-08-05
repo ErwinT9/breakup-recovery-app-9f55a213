@@ -302,35 +302,57 @@ function SettingsScreen() {
         >
           <ArrowLeft className="size-5" aria-hidden />
         </button>
-        <h1 className="mt-4 text-[2rem] font-semibold tracking-tight">Settings</h1>
+        <h1 className="mt-4 text-[2rem] font-semibold tracking-tight">{t("settings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
       </header>
 
       <main className="flex-1 space-y-4 px-5 py-5">
         <SoftCard className="space-y-4">
-          <Row icon={UserRound} title="Edit profile" description="Name, bio and photo." />
-          <div className="flex items-center gap-3">
-            <Avatar className="size-14">
-              {avatar ? <AvatarImage src={avatar} alt="Profile picture" /> : null}
+          <Row
+            icon={UserRound}
+            title={t("settings.editProfile")}
+            description={t("settings.editProfileDesc")}
+          />
+          <div className="flex items-center gap-4">
+            <Avatar className="size-16">
+              {avatar ? <AvatarImage src={avatar} alt={t("settings.profilePhoto")} /> : null}
               <AvatarFallback className="bg-mint text-on-tint">
                 {(name || "N").slice(0, 1).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="avatar-url" className="flex items-center gap-2">
-                <ImageIcon className="size-4" aria-hidden /> Profile picture URL
-              </Label>
-              <Input
-                id="avatar-url"
-                value={avatar}
-                placeholder="https://…"
-                onChange={(event) => setAvatar(event.target.value)}
-                className="h-11 rounded-2xl"
-              />
+            <div className="flex-1 space-y-2">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ImageIcon className="size-4" aria-hidden /> {t("settings.profilePhoto")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="press h-10 rounded-2xl"
+                  disabled={photoBusy}
+                  onClick={() => void choosePhoto()}
+                >
+                  <Upload className="size-4" aria-hidden />
+                  {avatar ? t("common.change") : t("common.upload")}
+                </Button>
+                {avatar ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="press h-10 rounded-2xl text-destructive"
+                    disabled={photoBusy}
+                    onClick={() => void removePhoto()}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    {t("common.remove")}
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("settings.photoHint")}</p>
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="display-name">Display name</Label>
+            <Label htmlFor="display-name">{t("settings.displayName")}</Label>
             <Input
               id="display-name"
               maxLength={40}
@@ -340,7 +362,7 @@ function SettingsScreen() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio">{t("settings.bio")}</Label>
             <Textarea
               id="bio"
               maxLength={200}
@@ -352,7 +374,7 @@ function SettingsScreen() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="recovery-date" className="flex items-center gap-2">
-              <CalendarDays className="size-4" aria-hidden /> Recovery start date
+              <CalendarDays className="size-4" aria-hidden /> {t("settings.recoveryStart")}
             </Label>
             <Input
               id="recovery-date"
@@ -368,16 +390,20 @@ function SettingsScreen() {
             disabled={update.isPending}
             onClick={() => void saveProfile()}
           >
-            Save changes
+            {t("settings.saveChanges")}
           </Button>
         </SoftCard>
 
         <SoftCard className="space-y-4">
-          <Row icon={Bell} title="Notifications" description="Choose what you want to hear about.">
+          <Row
+            icon={Bell}
+            title={t("settings.notifications")}
+            description={t("settings.notificationsDesc")}
+          >
             <Switch
               checked={profile.data?.notifications_enabled ?? false}
               onCheckedChange={(checked) => void toggleReminders(checked)}
-              aria-label="Notifications"
+              aria-label={t("settings.notifications")}
             />
           </Row>
           {profile.data?.notifications_enabled ? (
