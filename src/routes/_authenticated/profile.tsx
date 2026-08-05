@@ -205,7 +205,30 @@ function SettingsScreen() {
       );
       queryClient.setQueryData(["streak", userId], next);
     }
-    toast.success("Saved. It syncs automatically when you're online.");
+    toastOnce("profile-saved", t("toast.saved"), "success");
+  };
+
+  const choosePhoto = async () => {
+    haptic.light();
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await pickAvatar();
+      if (!dataUrl) return;
+      setAvatar(dataUrl);
+      await update.mutateAsync({ avatar_url: dataUrl });
+      toastOnce("avatar-updated", t("toast.photoUpdated"), "success");
+    } catch {
+      toastOnce("avatar-failed", t("toast.photoFailed"), "error");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    haptic.light();
+    setAvatar("");
+    await update.mutateAsync({ avatar_url: null });
+    toastOnce("avatar-removed", t("toast.photoRemoved"), "success");
   };
 
   const syncNow = async () => {
@@ -214,7 +237,7 @@ function SettingsScreen() {
     const stamp = new Date().toISOString();
     await storage.set("nc:last-sync", stamp);
     setLastSync(stamp);
-    toast.success("Backup complete.");
+    toastOnce("backup-complete", t("toast.backupComplete"), "success");
   };
 
   const exportData = async () => {
@@ -231,7 +254,7 @@ function SettingsScreen() {
     link.download = "no-contact-tracker-data.json";
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Your data was exported.");
+    toastOnce("exported", t("toast.exported"), "success");
   };
 
   const deleteAccount = async () => {
