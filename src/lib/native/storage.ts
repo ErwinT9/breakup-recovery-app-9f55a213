@@ -83,6 +83,21 @@ export const storage = {
   },
 };
 
+/** Wipes every locally persisted value (used when deleting an account). */
+export async function clearAllLocalData(): Promise<void> {
+  try {
+    if (isNative()) {
+      await Preferences.clear();
+      return;
+    }
+    if (typeof window === "undefined") return;
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  } catch (error) {
+    console.warn("[storage] clear failed", error);
+  }
+}
+
 export const STORAGE_KEYS = {
   onboarded: "nc:onboarded",
   entitlement: "nc:entitlement",

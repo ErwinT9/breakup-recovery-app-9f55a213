@@ -55,7 +55,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { pickImageSource } from "@/lib/avatar";
 import { LANGUAGES, setLanguage, type LanguageCode } from "@/lib/i18n";
 import { haptic } from "@/lib/native/haptics";
-import { storage } from "@/lib/native/storage";
+import { clearAllLocalData, storage } from "@/lib/native/storage";
+import { deleteMyAccount } from "@/lib/account.functions";
 import { toastOnce } from "@/lib/toastOnce";
 import {
   DEFAULT_NOTIFICATION_PREFS,
@@ -127,7 +128,10 @@ function SettingsScreen() {
   const [notifs, setNotifs] = useState<NotifPrefs>(DEFAULT_NOTIFS);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [password, setPassword] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [finalOpen, setFinalOpen] = useState(false);
+  const [deletedOpen, setDeletedOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const [deleting, setDeleting] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cropSource, setCropSource] = useState<string | null>(null);
@@ -204,11 +208,7 @@ function SettingsScreen() {
       avatar_url: avatar.trim() || null,
     });
     if (recovery && streak.data) {
-      const next = await streakRepo.setStart(
-        userId,
-        streak.data,
-        new Date(recovery).toISOString(),
-      );
+      const next = await streakRepo.setStart(userId, streak.data, new Date(recovery).toISOString());
       queryClient.setQueryData(["streak", userId], next);
     }
     toastOnce("profile-saved", t("toast.saved"), "success");
@@ -279,35 +279,40 @@ function SettingsScreen() {
   };
 
   const deleteAccount = async () => {
-    if (!user?.email) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password,
-      });
-      if (error) throw error;
-      await Promise.all([
-        supabase.from("flags").delete().eq("user_id", userId),
-        supabase.from("wins").delete().eq("user_id", userId),
-        supabase.from("badges").delete().eq("user_id", userId),
-        supabase.from("letters").delete().eq("user_id", userId),
-        supabase.from("streaks").delete().eq("user_id", userId),
-        supabase.from("questionnaire_answers").delete().eq("user_id", userId),
-      ]);
-      await supabase.from("profiles").delete().eq("id", userId);
+      await deleteMyAccount();
       await clearUserCache(userId);
+      await queryClient.cancelQueries();
       queryClient.clear();
       await signOut();
-      toast.success("Your account data was deleted.");
-      void navigate({ to: "/auth", replace: true });
+      await clearAllLocalData();
+      setFinalOpen(false);
+      setDeleteOpen(false);
+      setCountdown(5);
+      setDeletedOpen(true);
     } catch (error) {
       toast.error(humanizeError(error));
     } finally {
       setDeleting(false);
-      setPassword("");
+      setConfirmText("");
     }
   };
+
+  useEffect(() => {
+    if (!deletedOpen) return;
+    const timer = window.setInterval(() => {
+      setCountdown((value) => {
+        if (value <= 1) {
+          window.clearInterval(timer);
+          void navigate({ to: "/auth", replace: true });
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [deletedOpen, navigate]);
 
   return (
     <div className="animate-in slide-in-from-right-6 fade-in mx-auto flex min-h-screen w-full max-w-md flex-col duration-300">
@@ -547,7 +552,9 @@ function SettingsScreen() {
             description={online ? "Connected" : "Offline mode — changes save on this device"}
           />
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>Status: {online ? (pending > 0 ? "Syncing" : "Up to date") : "Waiting for network"}</li>
+            <li>
+              Status: {online ? (pending > 0 ? "Syncing" : "Up to date") : "Waiting for network"}
+            </li>
             <li>Pending uploads: {pending}</li>
             <li>Last sync: {lastSync ? new Date(lastSync).toLocaleString() : "Not yet"}</li>
           </ul>
@@ -596,30 +603,43 @@ function SettingsScreen() {
         onCropped={saveCroppedPhoto}
       />
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setConfirmText("");
+        }}
+      >
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              All of your cloud data — streak, flags, wins, badges and letters — will be deleted
-              permanently. Confirm with your password to continue.
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                Deleting your account will permanently remove all data associated with your account
+                from our servers. This action cannot be undone.
+              </span>
+              <span className="block">
+                If you simply don&apos;t want to use the app right now and may return later, you can
+                safely uninstall the app instead. Your account and progress will remain available
+                when you sign back in.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
-            type="password"
-            value={password}
-            placeholder="Your password"
-            onChange={(event) => setPassword(event.target.value)}
+            value={confirmText}
+            placeholder={'Type "delete" to confirm'}
+            onChange={(event) => setConfirmText(event.target.value)}
             className="h-12 rounded-2xl"
-            aria-label="Password"
+            aria-label='Type "delete" to confirm'
+            autoComplete="off"
           />
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
               className="rounded-2xl"
-              disabled={deleting || password.length < 6}
-              onClick={() => void deleteAccount()}
+              disabled={deleting || confirmText.trim().toLowerCase() !== "delete"}
+              onClick={() => setFinalOpen(true)}
             >
               Delete forever
             </Button>
@@ -627,6 +647,46 @@ function SettingsScreen() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={finalOpen} onOpenChange={setFinalOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is permanent and cannot be undone. Are you sure you want to delete your
+              account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-2xl" disabled={deleting}>
+              Keep Account
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              className="rounded-2xl"
+              disabled={deleting}
+              onClick={() => void deleteAccount()}
+            >
+              Delete Forever
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deletedOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Account Deleted</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your account has been permanently deleted. We&apos;re sorry to see you go. If you ever
+              decide to return, you&apos;re always welcome to create a new account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <p aria-live="polite" className="text-sm text-muted-foreground">
+            Redirecting to the Sign In page in {countdown} {countdown === 1 ? "second" : "seconds"}
+            ...
+          </p>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
