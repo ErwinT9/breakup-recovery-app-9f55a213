@@ -1,8 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CalendarClock, FileText, Info, ScrollText, Settings, Share2 } from "lucide-react";
+import {
+  CalendarClock,
+  FileText,
+  Info,
+  LogOut,
+  RefreshCw,
+  ScrollText,
+  Settings,
+  Share2,
+} from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import {
   AlertDialog,
@@ -20,17 +29,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { profileRepo, streakRepo } from "@/data/repository";
+import { clearUserCache, profileRepo, streakRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { humanizeError } from "@/lib/analytics";
 import { haptic } from "@/lib/native/haptics";
 import { shareApp } from "@/lib/share";
+import { toastOnce } from "@/lib/toastOnce";
 import { cn } from "@/lib/utils";
 
 const APP_VERSION = "1.0.0";
-
-function shortId(id: string): string {
-  return `NC-${id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toUpperCase()}`;
-}
 
 export function MoreDrawer({
   open,
@@ -39,13 +47,16 @@ export function MoreDrawer({
   open: boolean;
   onOpenChange: (next: boolean) => void;
 }) {
-  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { user, signOut } = useAuth();
   const userId = user?.id ?? "";
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { restore, busy } = useSubscription();
   const [resetOpen, setResetOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [newDate, setNewDate] = useState(() => new Date().toISOString().slice(0, 16));
 
   const profile = useQuery({
@@ -65,37 +76,63 @@ export function MoreDrawer({
     },
     onSuccess: (next) => {
       queryClient.setQueryData(["streak", userId], next);
-      toast.success("Your no-contact date has been reset.");
+      toastOnce("reset-date", t("reset.done"), "success");
       setDateOpen(false);
       onOpenChange(false);
     },
-    onError: () => toast.error("Couldn't reset right now — it will retry."),
+    onError: () => toastOnce("reset-date-error", t("reset.failed"), "error"),
   });
 
   const name = profile.data?.display_name ?? user?.email?.split("@")[0] ?? "Friend";
 
+  const logOut = async () => {
+    haptic.light();
+    try {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await clearUserCache(userId);
+      await signOut();
+      toastOnce("logged-out", t("toast.loggedOut"), "success");
+      void navigate({ to: "/auth", replace: true });
+    } catch (error) {
+      toastOnce("logout-error", humanizeError(error), "error");
+    }
+  };
+
   const items = [
     {
       icon: CalendarClock,
-      label: "Reset No Contact Date",
+      label: t("drawer.resetDate"),
       onClick: () => setResetOpen(true),
     },
     {
       icon: Share2,
-      label: "Invite Friends",
+      label: t("drawer.invite"),
       onClick: () => void shareApp(),
     },
     {
       icon: FileText,
-      label: "Privacy Policy",
+      label: t("drawer.privacy"),
       onClick: () => void navigate({ to: "/privacy" }),
     },
     {
       icon: ScrollText,
-      label: "Terms & Conditions",
+      label: t("drawer.terms"),
       onClick: () => void navigate({ to: "/terms" }),
     },
-    { icon: Info, label: "About", onClick: () => setAboutOpen(true) },
+    { icon: Info, label: t("drawer.about"), onClick: () => setAboutOpen(true) },
+    {
+      icon: RefreshCw,
+      label: t("drawer.restore"),
+      onClick: () => {
+        if (!busy) void restore();
+      },
+    },
+    {
+      icon: LogOut,
+      label: t("common.logOut"),
+      onClick: () => setLogoutOpen(true),
+    },
   ];
 
   return (
@@ -117,14 +154,11 @@ export function MoreDrawer({
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate font-semibold">{name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  ID: {userId ? shortId(userId) : "—"}
-                </p>
               </div>
             </div>
             <button
               type="button"
-              aria-label="Settings"
+              aria-label={t("common.settings")}
               onClick={() => {
                 haptic.select();
                 onOpenChange(false);
