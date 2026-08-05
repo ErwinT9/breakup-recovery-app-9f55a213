@@ -87,3 +87,35 @@ export async function pickAvatar(): Promise<string | null> {
   if (!file) return null;
   return toAvatarDataUrl(await readFile(file));
 }
+
+/**
+ * Picks a photo and returns the ORIGINAL data URL (no crop, no downscale) so
+ * the in-app cropper can work with full detail. Resolves to `null` on cancel.
+ */
+export async function pickImageSource(): Promise<string | null> {
+  if (isNative()) {
+    try {
+      const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+      const photo = await Camera.getPhoto({
+        quality: 92,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Prompt,
+      });
+      return photo.dataUrl ?? null;
+    } catch {
+      return null; // user cancelled the native picker
+    }
+  }
+
+  const file = await new Promise<File | null>((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+  if (!file) return null;
+  return readFile(file);
+}
