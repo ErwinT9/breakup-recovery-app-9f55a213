@@ -14,7 +14,7 @@ const SUPPORTED = LANGUAGES.map((entry) => entry.code) as readonly string[];
 
 function normalize(tag: string | null | undefined): LanguageCode | null {
   if (!tag) return null;
-  const base = tag.toLowerCase().split(/[-_]/)[0];
+  const base = tag.toLowerCase().split(/[-_]/)[0] ?? "";
   return (SUPPORTED.includes(base) ? base : null) as LanguageCode | null;
 }
 
