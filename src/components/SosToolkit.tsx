@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CircleDot, Flag as FlagIcon, Mail, Sparkles, Trophy, Wind } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SoftCard } from "@/components/SoftCard";
 import { PopIt } from "@/components/PopIt";
@@ -10,13 +10,49 @@ import { flagRepo, letterRepo, winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics } from "@/lib/analytics";
 import { activity } from "@/lib/badgeActivity";
-import { AFFIRMATIONS, GROUNDING_STEPS } from "@/lib/content";
-import { getSupportQuoteOfTheDay } from "@/lib/dailyQuote";
+import { GROUNDING_STEPS } from "@/lib/content";
+import { getRotatingQuote, rotationSlot } from "@/lib/dailyQuote";
 import { haptic } from "@/lib/native/haptics";
 import { sosEncouragement } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 type Tool = "menu" | "breathe" | "ground" | "flags" | "wins" | "letters" | "words" | "urge";
+
+const HEADERS: Record<Tool, { title: string; subtitle: string }> = {
+  menu: {
+    title: "Emergency toolkit",
+    subtitle:
+      "Most urges pass if you give them a little time. Let's get through this together.",
+  },
+  breathe: {
+    title: "Guided Breathing",
+    subtitle: "Slow your breathing and let your body settle.",
+  },
+  ground: {
+    title: "Ground Yourself",
+    subtitle: "Reconnect with the present moment using your senses.",
+  },
+  flags: {
+    title: "Remember Why You Left",
+    subtitle: "Read the reasons that helped you choose yourself.",
+  },
+  wins: {
+    title: "Celebrate Your Progress",
+    subtitle: "Every small victory is proof that you're moving forward.",
+  },
+  letters: {
+    title: "Your Unsent Letters",
+    subtitle: "Read your thoughts without reopening old wounds.",
+  },
+  words: {
+    title: "Words That Help",
+    subtitle: "A few lines to hold onto right now.",
+  },
+  urge: {
+    title: "Ride Out the Urge",
+    subtitle: "Stay present for one minute. The urge will pass.",
+  },
+};
 
 const MENU: { key: Tool; label: string; hint: string; icon: typeof Wind; tint: string }[] = [
   { key: "breathe", label: "Breathe", hint: "60 seconds, guided", icon: Wind, tint: "bg-sky" },
@@ -76,14 +112,26 @@ export function SosToolkit({
   });
 
   const breatheLeft = useCountdown(60, open && tool === "breathe");
-  const affirmation = useMemo(
-    () => AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)],
-    [tool],
-  );
   const [quote, setQuote] = useState<string | null>(null);
   useEffect(() => {
-    if (open) setQuote(getSupportQuoteOfTheDay());
+    if (!open) return;
+    setQuote(getRotatingQuote());
+    let slot = rotationSlot();
+    const check = () => {
+      const now = rotationSlot();
+      if (now === slot) return;
+      slot = now;
+      setQuote(getRotatingQuote());
+    };
+    const id = window.setInterval(check, 60_000);
+    window.addEventListener("focus", check);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("focus", check);
+    };
   }, [open]);
+
+  const header = HEADERS[tool];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -92,10 +140,10 @@ export function SosToolkit({
         className="mx-auto max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-[2rem] border-0 bg-background pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
       >
         <SheetHeader className="px-1 text-left">
-          <SheetTitle className="text-2xl">Emergency toolkit</SheetTitle>
-          <p className="text-sm text-muted-foreground">
-            Most urges pass if you give them a little time. Let&apos;s get through this together.
-          </p>
+          <SheetTitle className="animate-fade-in text-2xl" key={header.title}>
+            {header.title}
+          </SheetTitle>
+          <p className="text-sm text-muted-foreground">{header.subtitle}</p>
         </SheetHeader>
 
         {tool !== "menu" ? (
@@ -230,9 +278,6 @@ export function SosToolkit({
           {tool === "urge" ? (
             <SoftCard className="py-4">
               <PopIt onDone={() => onOpenChange(false)} />
-              <p className="mt-4 rounded-2xl bg-lavender p-4 text-center text-sm text-on-tint">
-                {affirmation}
-              </p>
             </SoftCard>
           ) : null}
 
