@@ -605,34 +605,88 @@ function SettingsScreen() {
         onCropped={saveCroppedPhoto}
       />
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setConfirmText("");
+        }}
+      >
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              All of your cloud data — streak, flags, wins, badges and letters — will be deleted
-              permanently. Confirm with your password to continue.
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                Deleting your account will permanently remove all data associated with your account
+                from our servers. This action cannot be undone.
+              </span>
+              <span className="block">
+                If you simply don&apos;t want to use the app right now and may return later, you can
+                safely uninstall the app instead. Your account and progress will remain available
+                when you sign back in.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
-            type="password"
-            value={password}
-            placeholder="Your password"
-            onChange={(event) => setPassword(event.target.value)}
+            value={confirmText}
+            placeholder={'Type "delete" to confirm'}
+            onChange={(event) => setConfirmText(event.target.value)}
             className="h-12 rounded-2xl"
-            aria-label="Password"
+            aria-label='Type "delete" to confirm'
+            autoComplete="off"
           />
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
               className="rounded-2xl"
-              disabled={deleting || password.length < 6}
-              onClick={() => void deleteAccount()}
+              disabled={deleting || confirmText.trim().toLowerCase() !== "delete"}
+              onClick={() => setFinalOpen(true)}
             >
               Delete forever
             </Button>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={finalOpen} onOpenChange={setFinalOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is permanent and cannot be undone. Are you sure you want to delete your
+              account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-2xl" disabled={deleting}>
+              Keep Account
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              className="rounded-2xl"
+              disabled={deleting}
+              onClick={() => void deleteAccount()}
+            >
+              Delete Forever
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deletedOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Account Deleted</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your account has been permanently deleted. We&apos;re sorry to see you go. If you ever
+              decide to return, you&apos;re always welcome to create a new account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <p aria-live="polite" className="text-sm text-muted-foreground">
+            Redirecting to the Sign In page in {countdown} {countdown === 1 ? "second" : "seconds"}
+            ...
+          </p>
         </AlertDialogContent>
       </AlertDialog>
 
