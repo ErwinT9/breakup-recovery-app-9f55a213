@@ -485,11 +485,20 @@ function SettingsScreen() {
             <Switch
               checked={profile.data?.notifications_enabled ?? false}
               onCheckedChange={(checked) => void toggleReminders(checked)}
+              disabled={notifBusy}
               aria-label={t("settings.notifications")}
             />
           </Row>
           {profile.data?.notifications_enabled ? (
             <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="press h-11 w-full rounded-2xl"
+                disabled={notifBusy}
+                onClick={() => void sendTestNotification()}
+              >
+                Send a test notification
+              </Button>
               {NOTIFICATION_CATEGORIES.filter(
                 ({ key }) => key !== "morning" && key !== "evening",
               ).map(({ key, label }) => (
