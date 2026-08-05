@@ -24,11 +24,13 @@ export function AppShell({
   title,
   subtitle,
   action,
+  leading,
 }: {
   children: ReactNode;
   title: string;
   subtitle?: ReactNode | undefined;
   action?: ReactNode | undefined;
+  leading?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { t } = useTranslation();
@@ -60,6 +62,7 @@ export function AppShell({
         >
           <Menu className="size-5" aria-hidden />
         </button>
+        {leading}
         <div className="min-w-0 flex-1">
           <h1 className="text-[1.75rem] font-semibold tracking-tight">{title}</h1>
           {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
