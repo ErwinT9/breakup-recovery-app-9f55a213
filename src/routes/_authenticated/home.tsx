@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useTheme } from "@/hooks/useTheme";
+import { Moon, Sun } from "lucide-react";
 import { DailyTasks } from "@/components/DailyTasks";
 import { FireflyJar } from "@/components/FireflyJar";
 import { HealingProgress } from "@/components/HealingProgress";
@@ -213,10 +216,41 @@ function HomeScreen() {
 
   const rawName = profile.data?.display_name;
   const name = rawName ? capitalizeName(rawName) : "";
+  const theme = useTheme();
 
   return (
     <AppShell
-      title={name ? `Hi ${name}` : "Your reset"}
+      title={name ? `Hi ${name}` : "Welcome"}
+      leading={
+        <button
+          type="button"
+          aria-label="Open Profile"
+          onClick={() => {
+            haptic.light();
+            void navigate({ to: "/profile" });
+          }}
+          className="press mt-1 shrink-0 rounded-full"
+        >
+          <UserAvatar src={profile.data?.avatar_url} name={name} className="size-10" />
+        </button>
+      }
+      action={
+        <button
+          type="button"
+          aria-label="Switch Theme"
+          onClick={() => {
+            haptic.select();
+            theme.toggle();
+          }}
+          className="press mt-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+        >
+          {theme.resolved === "dark" ? (
+            <Sun className="size-5 animate-in fade-in zoom-in-75 duration-300" aria-hidden />
+          ) : (
+            <Moon className="size-5 animate-in fade-in zoom-in-75 duration-300" aria-hidden />
+          )}
+        </button>
+      }
       subtitle={
         <span key={dailyQuote} className="animate-fade-in block">
           {dailyQuote}
