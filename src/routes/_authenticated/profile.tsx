@@ -483,6 +483,27 @@ function SettingsScreen() {
             title={t("settings.language")}
             description={t("settings.languageDesc")}
           />
+        </SoftCard>
+
+        <SoftCard className="space-y-3">
+          <Row
+            icon={Moon}
+            title={t("settings.appearance")}
+            description={t("settings.appearanceDesc")}
+          />
+          <Select value={theme.mode} onValueChange={(value) => theme.setMode(value as ThemeMode)}>
+            <SelectTrigger className="h-12 rounded-2xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">{t("settings.themeLight")}</SelectItem>
+              <SelectItem value="dark">{t("settings.themeDark")}</SelectItem>
+              <SelectItem value="system">{t("settings.themeSystem")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </SoftCard>
+
+        <SoftCard className="space-y-3">
           <Select
             value={i18n.language as LanguageCode}
             onValueChange={(value) => {
