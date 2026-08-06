@@ -272,6 +272,7 @@ export function MoreDrawer({
       </Dialog>
 
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        {null}
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("common.logOut")}</AlertDialogTitle>
