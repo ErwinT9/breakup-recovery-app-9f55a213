@@ -55,9 +55,11 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Symbolicated release stack traces.
-            firebaseCrashlytics {
-                mappingFileUploadEnabled true
-                nativeSymbolUploadEnabled false
+            if (hasGoogleServices) {
+                firebaseCrashlytics {
+                    mappingFileUploadEnabled true
+                    nativeSymbolUploadEnabled false
+                }
             }
         }
         debug {
@@ -65,8 +67,10 @@ android {
             // google-services.json or FCM stops delivering in debug builds.
             versionNameSuffix "-debug"
             // Keep local builds fast: reports still arrive, mappings aren't uploaded.
-            firebaseCrashlytics {
-                mappingFileUploadEnabled false
+            if (hasGoogleServices) {
+                firebaseCrashlytics {
+                    mappingFileUploadEnabled false
+                }
             }
         }
     }
@@ -112,10 +116,6 @@ try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
-        // Crashlytics + Performance require google-services, so they are applied
-        // in the same guard — never twice, never without config.
-        apply plugin: 'com.google.firebase.crashlytics'
-        apply plugin: 'com.google.firebase.firebase-perf'
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
