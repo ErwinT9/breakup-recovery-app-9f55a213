@@ -1,16 +1,18 @@
+import type { FirebaseCrashlyticsPlugin as CrashlyticsPlugin } from "@capacitor-firebase/crashlytics";
+import { registerPlugin } from "@capacitor/core";
 import { Device } from "@capacitor/device";
 import { App } from "@capacitor/app";
 
 import { isNative, platformName } from "../native/platform";
 import { isOnline, subscribeNetwork } from "../offline/network";
 
-type CrashlyticsPlugin = typeof import("@capacitor-firebase/crashlytics").FirebaseCrashlytics;
+// Registered directly instead of importing the package: its web implementation
+// pulls in the optional `firebase` JS SDK, which breaks the bundle. The native
+// bridge is all we need — on web every call below is skipped by isNative().
+const crashlytics = registerPlugin<CrashlyticsPlugin>("FirebaseCrashlytics");
 
-// Lazy, native-only import so the Firebase web SDK never enters SSR or the
-// browser bundle.
 async function plugin(): Promise<CrashlyticsPlugin> {
-  const mod = await import("@capacitor-firebase/crashlytics");
-  return mod.FirebaseCrashlytics;
+  return crashlytics;
 }
 
 type Props = Record<string, string | number | boolean | null | undefined>;
