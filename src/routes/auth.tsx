@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -43,10 +44,28 @@ function AuthScreen() {
   const { session } = useAuth();
   const { online } = useNetworkStatus();
   const [mode, setMode] = useState<Mode>("welcome");
+  // Navigation stack so Back returns to the screen the user came from and
+  // form fields (email/password) survive the round trip.
+  const [history, setHistory] = useState<Mode[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const goTo = useCallback((next: Mode) => {
+    setHistory((stack) => [...stack, mode]);
+    setError(null);
+    setMode(next);
+  }, [mode]);
+
+  const goBack = useCallback(() => {
+    haptic.select();
+    setError(null);
+    setHistory((stack) => {
+      setMode(stack[stack.length - 1] ?? "welcome");
+      return stack.slice(0, -1);
+    });
+  }, []);
 
   useEffect(() => {
     analytics.screen("auth");
