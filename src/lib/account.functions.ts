@@ -45,7 +45,7 @@ function friendlyFailure(error: unknown): never {
     error instanceof Error ? `${error.message}\n${error.stack ?? ""}` : JSON.stringify(error),
   );
   throw new Error(
-    "We couldn't delete your account right now. Please try again in a moment or contact support.",
+    `DEBUG: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
   );
 }
 
