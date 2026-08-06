@@ -84,6 +84,10 @@ function AuthScreen() {
 
   const google = async () => {
     haptic.light();
+    if (!online) {
+      toast.error("You're offline. Connect to the internet to sign in.");
+      return;
+    }
     setBusy(true);
     const { error: oauthError } = await signInWithGoogle();
     if (oauthError) {
@@ -96,6 +100,11 @@ function AuthScreen() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+
+    if (!online) {
+      toast.error("You're offline. Connect to the internet to sign in.");
+      return;
+    }
 
     if (mode === "forgot") {
       const parsed = z.string().email().safeParse(email.trim());
