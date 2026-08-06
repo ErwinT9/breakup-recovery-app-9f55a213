@@ -1,4 +1,9 @@
 import { isNative } from "@/lib/native/platform";
+import {
+  notifyPermissionBlocked,
+  requestPermission,
+  type PermissionKey,
+} from "@/lib/native/permissions";
 
 /**
  * Profile photo handling.
@@ -11,6 +16,22 @@ import { isNative } from "@/lib/native/platform";
 
 const MAX_SIZE = 256;
 const QUALITY = 0.82;
+
+/**
+ * Camera + gallery are only requested at the moment a photo is picked. If the
+ * OS has permanently denied one, the settings dialog is surfaced instead of a
+ * silent failure — the app itself keeps working either way.
+ */
+export async function ensurePhotoAccess(): Promise<boolean> {
+  if (!isNative()) return true;
+  const camera = await requestPermission("camera");
+  const photos = await requestPermission("photos");
+  if (camera === "granted" || photos === "granted" || camera === "unsupported") return true;
+  const blocked: PermissionKey | null =
+    camera === "blocked" ? "camera" : photos === "blocked" ? "photos" : null;
+  if (blocked) notifyPermissionBlocked(blocked);
+  return false;
+}
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -59,6 +80,7 @@ function readFile(file: File): Promise<string> {
  */
 export async function pickAvatar(): Promise<string | null> {
   if (isNative()) {
+    if (!(await ensurePhotoAccess())) return null;
     try {
       const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
       const photo = await Camera.getPhoto({
@@ -94,6 +116,7 @@ export async function pickAvatar(): Promise<string | null> {
  */
 export async function pickImageSource(): Promise<string | null> {
   if (isNative()) {
+    if (!(await ensurePhotoAccess())) return null;
     try {
       const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
       const photo = await Camera.getPhoto({
