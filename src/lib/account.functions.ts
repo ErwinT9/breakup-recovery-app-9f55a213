@@ -21,9 +21,29 @@ const USER_TABLES = [
 
 const PICTURE_BUCKET = "activity-pictures";
 
+/** Lists every object under a prefix, walking nested folders. */
+async function listAllPaths(
+  storage: { list: (path: string, opts: { limit: number }) => Promise<{ data: Array<{ name: string; id: string | null }> | null; error: unknown }> },
+  prefix: string,
+): Promise<string[]> {
+  const { data, error } = await storage.list(prefix, { limit: 1000 });
+  if (error) throw error;
+  const paths: string[] = [];
+  for (const entry of data ?? []) {
+    const full = `${prefix}/${entry.name}`;
+    // Folders come back with a null id.
+    if (entry.id === null) paths.push(...(await listAllPaths(storage, full)));
+    else paths.push(full);
+  }
+  return paths;
+}
+
 /** Never leak internal configuration details to the client. */
 function friendlyFailure(error: unknown): never {
-  console.error("[deleteMyAccount]", error);
+  console.error(
+    "[deleteMyAccount] failed:",
+    error instanceof Error ? `${error.message}\n${error.stack ?? ""}` : JSON.stringify(error),
+  );
   throw new Error(
     "We couldn't delete your account right now. Please try again in a moment or contact support.",
   );
@@ -44,14 +64,10 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
       // 1. Storage objects owned by the user (files live under `<uid>/…`).
-      const { data: files } = await supabaseAdmin.storage.from(PICTURE_BUCKET).list(userId, {
-        limit: 1000,
-      });
-      if (files?.length) {
-        const paths = files.map((file) => `${userId}/${file.name}`);
-        const { error: removeError } = await supabaseAdmin.storage
-          .from(PICTURE_BUCKET)
-          .remove(paths);
+      const bucket = supabaseAdmin.storage.from(PICTURE_BUCKET);
+      const paths = await listAllPaths(bucket as never, userId);
+      if (paths.length) {
+        const { error: removeError } = await bucket.remove(paths);
         if (removeError) throw removeError;
       }
 
