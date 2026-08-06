@@ -67,10 +67,6 @@ function AuthScreen() {
     if (session) void navigate({ to: "/home", replace: true });
   }, [session, navigate]);
 
-  // Offline with no cached session: signing in needs the network, so show a
-  // dedicated offline screen rather than a form that can only fail.
-  if (!online && !session) return <OfflineScreen />;
-
   useEffect(() => {
     setNativeOAuthHandlers({
       onError: (message) => {
@@ -81,6 +77,10 @@ function AuthScreen() {
     });
     return () => setNativeOAuthHandlers({});
   }, []);
+
+  // Offline with no cached session: signing in needs the network, so show a
+  // dedicated offline screen rather than a form that can only fail.
+  if (!online && !session) return <OfflineScreen />;
 
   const google = async () => {
     haptic.light();
