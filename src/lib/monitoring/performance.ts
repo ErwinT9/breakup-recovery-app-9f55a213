@@ -8,19 +8,23 @@ import { isNative } from "../native/platform";
 // native bridge is used — calls are skipped on web by isNative().
 const performance = registerPlugin<PerformancePlugin>("FirebasePerformance");
 
-async function plugin(): Promise<PerformancePlugin> {
-  return performance;
-}
+// A missing native plugin makes the Capacitor proxy throw synchronously; see
+// the note in crashlytics.ts. Disable the sink after the first failure.
+let unavailable = false;
 
 let started = false;
 let coldStartAt = 0;
 let coldStartDone = false;
 
 function call(fn: (p: PerformancePlugin) => Promise<unknown>): void {
-  if (!isNative()) return;
-  void plugin()
-    .then(fn)
-    .catch(() => undefined);
+  if (!isNative() || unavailable) return;
+  try {
+    void Promise.resolve(fn(performance)).catch(() => {
+      unavailable = true;
+    });
+  } catch {
+    unavailable = true;
+  }
 }
 
 /**
