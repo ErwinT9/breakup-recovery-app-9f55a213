@@ -45,29 +45,9 @@ function friendlyFailure(error: unknown): never {
     error instanceof Error ? `${error.message}\n${error.stack ?? ""}` : JSON.stringify(error),
   );
   throw new Error(
-    `DEBUG: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
+    "We couldn't delete your account right now. Please try again in a moment or contact support.",
   );
 }
-
-export const debugDeleteProbe = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const steps: string[] = [];
-    try {
-      steps.push(`userId=${context.userId}`);
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      steps.push("admin-imported");
-      const list = await supabaseAdmin.storage.from(PICTURE_BUCKET).list(context.userId, { limit: 10 });
-      steps.push(`list=${JSON.stringify(list.error ?? list.data?.length)}`);
-      const del = await supabaseAdmin.from("wins").delete().eq("user_id", context.userId);
-      steps.push(`winsDelete=${JSON.stringify(del.error ?? "ok")}`);
-      const au = await supabaseAdmin.auth.admin.deleteUser(context.userId);
-      steps.push(`authDelete=${JSON.stringify(au.error?.message ?? "ok")}`);
-    } catch (e) {
-      steps.push(`THREW=${e instanceof Error ? e.message : JSON.stringify(e)}`);
-    }
-    return { steps };
-  });
 
 /**
  * Permanently deletes the signed-in user: every owned row, their storage
