@@ -17,7 +17,12 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchAutoHide: false,
+      // Safety net: if JS ever fails to boot, the OS still removes the splash
+      // instead of leaving a permanent white screen. hideNativeSplash() hides
+      // it earlier, as soon as React mounts.
+      launchAutoHide: true,
+      launchShowDuration: 3000,
+      launchFadeOutDuration: 200,
       backgroundColor: "#FFFFFF",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
