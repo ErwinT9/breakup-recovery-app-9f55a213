@@ -2,6 +2,8 @@ import type { Session, User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { analytics } from "@/lib/analytics";
+import { clearCrashUser, setCrashUser } from "@/lib/monitoring/crashlytics";
 import { deactivatePushToken, syncPushRegistration } from "@/lib/notifications/push";
 import { isOnline } from "@/lib/offline/network";
 import { identifyUser, logOutRevenueCat } from "@/lib/subscription/revenuecat";
@@ -37,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession);
       setLoading(false);
       if (nextSession?.user) {
+        setCrashUser(nextSession.user.id);
+        analytics.track("login", { provider: nextSession.user.app_metadata?.provider ?? "unknown" });
         void identifyUser(nextSession.user.id);
         void syncPushRegistration(nextSession.user.id);
       }
@@ -45,7 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void supabase.auth.getSession().then(({ data: current }) => {
       setSession(current.session);
       setLoading(false);
-      if (current.session?.user) void syncPushRegistration(current.session.user.id);
+      if (current.session?.user) {
+        setCrashUser(current.session.user.id);
+        void syncPushRegistration(current.session.user.id);
+      }
     });
 
     // Safety net: never leave the splash spinning if the session read stalls
@@ -65,9 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signOut: async () => {
         signingOut.current = true;
+        analytics.track("logout");
         await deactivatePushToken(session?.user?.id ?? null);
         await logOutRevenueCat();
         await supabase.auth.signOut();
+        clearCrashUser();
         setSession(null);
       },
     }),

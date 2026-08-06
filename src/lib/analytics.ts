@@ -1,3 +1,4 @@
+import { logBreadcrumb, recordNonFatal } from "./monitoring/crashlytics";
 import { platformName } from "./native/platform";
 
 type Props = Record<string, string | number | boolean | null | undefined>;
@@ -14,6 +15,7 @@ export const analytics = {
   track(name: string, props?: Props) {
     events.push({ name, props, at: new Date().toISOString() });
     if (events.length > MAX_EVENTS) events.shift();
+    logBreadcrumb(name, props);
     if (import.meta.env.DEV) console.debug("[analytics]", name, props ?? {});
   },
   screen(name: string) {
@@ -22,6 +24,7 @@ export const analytics = {
   error(error: unknown, context?: Props) {
     const message = error instanceof Error ? error.message : String(error);
     analytics.track("app_error", { ...context, message });
+    recordNonFatal(error, context);
     console.error("[crash]", message, context ?? {});
   },
   drain() {
