@@ -65,12 +65,12 @@ import {
   loadNotificationPrefs,
   registerPush,
   notificationPermissionGranted,
-  requestNotificationPermissionStatus,
   saveNotificationPrefs,
   sendTestLocalNotification,
   syncReminders,
   type NotificationPrefs,
 } from "@/lib/notifications";
+import { notifyPermissionBlocked, requestPermission } from "@/lib/native/permissions";
 import { flushQueue } from "@/lib/offline/syncQueue";
 
 export const Route = createFileRoute("/_authenticated/profile")({
