@@ -78,10 +78,11 @@ export function logBreadcrumb(name: string, props?: Props): void {
 export function recordNonFatal(error: unknown, context?: Props): void {
   const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
+  const keysAndValues = toKeysAndValues(context);
   call(() =>
     FirebaseCrashlytics.recordException({
       message: stack ? `${message}\n${stack}` : message,
-      keysAndValues: toKeysAndValues(context),
+      ...(keysAndValues ? { keysAndValues } : {}),
     }),
   );
 }
