@@ -48,7 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (current.session?.user) void syncPushRegistration(current.session.user.id);
     });
 
-    return () => data.subscription.unsubscribe();
+    // Safety net: never leave the splash spinning if the session read stalls
+    // (e.g. a hung token refresh while offline).
+    const settle = window.setTimeout(() => setLoading(false), 3000);
+
+    return () => {
+      window.clearTimeout(settle);
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   const value = useMemo<AuthValue>(
