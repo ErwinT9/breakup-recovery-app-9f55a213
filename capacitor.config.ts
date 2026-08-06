@@ -9,7 +9,10 @@ const config: CapacitorConfig = {
     // Stable https://localhost origin so Supabase auth storage survives restarts.
     androidScheme: "https",
     allowMixedContent: false,
-    captureInput: true,
+    // captureInput MUST stay false: when true the WebView sets
+    // TYPE_NULL on the input connection, which disables IME composing text —
+    // Gboard voice typing (and swipe/autocorrect) then never reaches inputs.
+    captureInput: false,
     webContentsDebuggingEnabled: false,
   },
   plugins: {

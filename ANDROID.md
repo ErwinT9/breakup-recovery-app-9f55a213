@@ -139,3 +139,14 @@ Setup:
 
 Nothing changes in the Google Cloud console: Google still redirects to the
 Supabase callback URL; only the final hop back into the app changed.
+
+## Gboard voice typing
+
+`android.captureInput` must remain `false` in `capacitor.config.ts`. When it is
+`true`, Capacitor's WebView returns a `TYPE_NULL` input connection to the IME,
+which disables composing text — Gboard voice typing, gesture typing and
+autocorrect silently stop inserting text (Chrome is unaffected because it never
+sets that flag). `MainActivity` also uses `windowSoftInputMode="adjustResize"`
+so the focused field stays visible while dictation is active.
+
+Run `bun run sync:android` after changing `capacitor.config.ts`, then rebuild.
