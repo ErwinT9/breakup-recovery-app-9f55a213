@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// Firebase plugins must be applied before the android {} block so the
+// firebaseCrashlytics extension exists on each build type. They are guarded by
+// google-services.json so the project still builds without Firebase config.
+def hasGoogleServices = file('google-services.json').exists()
+if (hasGoogleServices) {
+    apply plugin: 'com.google.firebase.crashlytics'
+    apply plugin: 'com.google.firebase.firebase-perf'
+}
+
 // Release signing is read from android/keystore.properties (never committed).
 // Copy keystore.properties.example to keystore.properties and fill it in.
 def keystorePropertiesFile = rootProject.file("keystore.properties")
