@@ -7,6 +7,7 @@ import {
   LogOut,
   MessageSquareHeart,
   RefreshCw,
+  RotateCcw,
   ScrollText,
   Settings,
   Share2,
@@ -59,6 +60,7 @@ export function MoreDrawer({
   const [dateOpen, setDateOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [redoOpen, setRedoOpen] = useState(false);
   const [noEmailOpen, setNoEmailOpen] = useState(false);
   const [newDate, setNewDate] = useState(() => new Date().toISOString().slice(0, 16));
 
@@ -134,6 +136,11 @@ export function MoreDrawer({
       onClick: () => void navigate({ to: "/terms" }),
     },
     { icon: Info, label: t("drawer.about"), onClick: () => setAboutOpen(true) },
+    {
+      icon: RotateCcw,
+      label: t("drawer.redoOnboarding", "Redo Onboarding"),
+      onClick: () => setRedoOpen(true),
+    },
     {
       icon: RefreshCw,
       label: t("drawer.restore"),
