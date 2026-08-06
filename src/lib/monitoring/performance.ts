@@ -1,12 +1,12 @@
 import { isNative } from "../native/platform";
 
-type PerformancePlugin = typeof import("@capacitor-firebase/performance").FirebasePerformance;
+// Registered directly instead of importing the package: its web implementation
+// pulls in the optional `firebase` JS SDK, which breaks the bundle. Only the
+// native bridge is used — calls are skipped on web by isNative().
+const performance = registerPlugin<PerformancePlugin>("FirebasePerformance");
 
-// Loaded lazily and only on native: the package's web implementation pulls in
-// the `firebase` JS SDK, which must never reach SSR or the browser bundle.
 async function plugin(): Promise<PerformancePlugin> {
-  const mod = await import("@capacitor-firebase/performance");
-  return mod.FirebasePerformance;
+  return performance;
 }
 
 let started = false;
