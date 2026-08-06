@@ -142,6 +142,27 @@ Supabase callback URL; only the final hop back into the app changed.
 
 ## Gboard voice typing
 
+## Crashlytics & Performance Monitoring
+
+Both are wired through the Firebase BoM in `android/app/build.gradle` (Crashlytics,
+Crashlytics NDK, Analytics, Performance). The Crashlytics and Performance Gradle
+plugins are applied at the top of that file, guarded by the presence of
+`google-services.json`, so the project still builds without Firebase config.
+
+- Release builds upload the R8 mapping file; debug builds skip the upload.
+- ANRs are collected automatically on Android 11+; the NDK artifact adds native crashes.
+- JS layer lives in `src/lib/monitoring/`. `analytics.track()` becomes a Crashlytics
+  breadcrumb and `analytics.error()` becomes a non-fatal, so existing instrumentation
+  is reused. Custom keys: screen, feature, app version/build, OS version, device model,
+  network status, anonymous user id.
+- Performance auto-collects app start, screen rendering, slow/frozen frames and native
+  HTTP. WebView `fetch` calls are recorded as sampled `webview_http_request` traces.
+- Everything is native-only and inert on web/SSR (plugins are dynamically imported).
+
+Data appears in the Firebase console a few minutes after a real device session.
+
+## Gboard voice typing
+
 `android.captureInput` must remain `false` in `capacitor.config.ts`. When it is
 `true`, Capacitor's WebView returns a `TYPE_NULL` input connection to the IME,
 which disables composing text — Gboard voice typing, gesture typing and
