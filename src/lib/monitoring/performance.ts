@@ -1,3 +1,6 @@
+import type { FirebasePerformancePlugin as PerformancePlugin } from "@capacitor-firebase/performance";
+import { registerPlugin } from "@capacitor/core";
+
 import { isNative } from "../native/platform";
 
 // Registered directly instead of importing the package: its web implementation

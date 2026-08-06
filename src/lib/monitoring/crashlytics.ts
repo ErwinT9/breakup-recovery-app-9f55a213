@@ -1,3 +1,5 @@
+import type { FirebaseCrashlyticsPlugin as CrashlyticsPlugin } from "@capacitor-firebase/crashlytics";
+import { registerPlugin } from "@capacitor/core";
 import { Device } from "@capacitor/device";
 import { App } from "@capacitor/app";
 
