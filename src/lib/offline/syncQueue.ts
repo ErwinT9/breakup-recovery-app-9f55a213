@@ -97,6 +97,10 @@ export async function flushQueue(): Promise<void> {
     }
   } finally {
     await writeQueue(remaining);
+    analytics.track(remaining.length ? "sync_failed" : "sync_completed", {
+      pending: remaining.length,
+      processed: queue.length,
+    });
     flushing = false;
   }
 }
