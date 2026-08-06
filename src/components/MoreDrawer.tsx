@@ -323,6 +323,32 @@ export function MoreDrawer({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={redoOpen} onOpenChange={setRedoOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redo Onboarding</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will take you through the onboarding steps again so you can update your
+              preferences and recovery plan. Your in-app data will remain unchanged. Do you want to
+              continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-2xl">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-2xl"
+              onClick={() => {
+                setRedoOpen(false);
+                onOpenChange(false);
+                void navigate({ to: "/questionnaire", search: { redo: true } });
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
