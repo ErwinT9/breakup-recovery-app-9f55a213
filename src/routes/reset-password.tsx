@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -42,6 +43,14 @@ function ResetPassword() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
+      <button
+        type="button"
+        onClick={() => void navigate({ to: "/auth" })}
+        aria-label={t("auth.back", "Go back")}
+        className="press mb-4 -ml-2 flex size-10 items-center justify-center rounded-full bg-muted text-foreground"
+      >
+        <ArrowLeft className="size-5" aria-hidden />
+      </button>
       <h1 className="text-3xl font-semibold tracking-tight">{t("resetPassword.title", "Set a new password")}</h1>
       <p className="mt-3 text-muted-foreground">
         {t("resetPassword.subtitle", "Choose something you haven't used before.")}
