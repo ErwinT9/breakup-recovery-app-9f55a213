@@ -55,7 +55,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { pickImageSource } from "@/lib/avatar";
 import { haptic } from "@/lib/native/haptics";
 import { clearAllLocalData, storage } from "@/lib/native/storage";
-import { deleteMyAccount } from "@/lib/account.functions";
+import { deleteMyAccount } from "@/lib/account";
 import { toastOnce } from "@/lib/toastOnce";
 import {
   DEFAULT_NOTIFICATION_PREFS,
