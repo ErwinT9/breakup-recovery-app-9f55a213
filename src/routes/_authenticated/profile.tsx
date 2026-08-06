@@ -226,8 +226,10 @@ function SettingsScreen() {
         return;
       }
 
-      const status = await requestNotificationPermissionStatus();
-      if (status === "denied") {
+      // Feature-time request: also routes a permanent denial to the settings dialog.
+      const state = await requestPermission("notifications");
+      if (state === "denied" || state === "blocked") {
+        if (state === "blocked") notifyPermissionBlocked("notifications");
         setNotifOn(false);
         await storage.set(NOTIF_ENABLED_KEY, false);
         await update.mutateAsync({ notifications_enabled: false });
