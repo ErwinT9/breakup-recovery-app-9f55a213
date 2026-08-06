@@ -11,9 +11,12 @@ import { isOnline, subscribeNetwork } from "../offline/network";
 // bridge is all we need — on web every call below is skipped by isNative().
 const crashlytics = registerPlugin<CrashlyticsPlugin>("FirebaseCrashlytics");
 
-async function plugin(): Promise<CrashlyticsPlugin> {
-  return crashlytics;
-}
+// When the native plugin is not compiled into the shell, Capacitor throws
+// "plugin is not implemented on android" SYNCHRONOUSLY from the proxy — not as
+// a rejected promise. Left unguarded that throw reaches window.onerror, which
+// reports it back into Crashlytics, which throws again: an infinite loop that
+// freezes the WebView (white screen, then ANR). One failure disables the sink.
+let unavailable = false;
 
 type Props = Record<string, string | number | boolean | null | undefined>;
 
@@ -21,10 +24,14 @@ let started = false;
 
 /** Fire-and-forget: monitoring must never break a user flow. */
 function call(fn: (p: CrashlyticsPlugin) => Promise<unknown>): void {
-  if (!isNative()) return;
-  void plugin()
-    .then(fn)
-    .catch(() => undefined);
+  if (!isNative() || unavailable) return;
+  try {
+    void Promise.resolve(fn(crashlytics)).catch(() => {
+      unavailable = true;
+    });
+  } catch {
+    unavailable = true;
+  }
 }
 
 function setKey(key: string, value: string | number | boolean): void {
