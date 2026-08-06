@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { supabase } from "@/integrations/supabase/client";
 import { deactivatePushToken, syncPushRegistration } from "@/lib/notifications/push";
+import { isOnline } from "@/lib/offline/network";
 import { identifyUser, logOutRevenueCat } from "@/lib/subscription/revenuecat";
 
 type AuthValue = {
@@ -22,9 +23,17 @@ const AuthContext = createContext<AuthValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  // Set only by an explicit sign-out so a failed token refresh while offline
+  // can never drop the cached session.
+  const signingOut = useRef(false);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!nextSession && !signingOut.current && !isOnline()) {
+        // Offline refresh failure — keep the user signed in with cached data.
+        setLoading(false);
+        return;
+      }
       setSession(nextSession);
       setLoading(false);
       if (nextSession?.user) {
@@ -48,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       signOut: async () => {
+        signingOut.current = true;
         await deactivatePushToken(session?.user?.id ?? null);
         await logOutRevenueCat();
         await supabase.auth.signOut();
