@@ -20,6 +20,10 @@ import { requestNotificationPermission, syncReminders } from "@/lib/notification
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/questionnaire")({
+  validateSearch: (search: Record<string, unknown>): { redo?: boolean } =>
+    search["redo"] === true || search["redo"] === "true" || search["redo"] === "1"
+      ? { redo: true }
+      : {},
   head: () => ({
     meta: [
       { title: "Your reset plan | No Contact Tracker" },
@@ -83,6 +87,7 @@ function Choice({
 function Questionnaire() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { redo } = Route.useSearch();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const userId = user?.id ?? "";
@@ -93,13 +98,15 @@ function Questionnaire() {
   useEffect(() => {
     analytics.screen("questionnaire");
     if (!userId) return;
-    void profileRepo.get(userId).then((profile) => {
-      if (profile?.questionnaire_completed) void navigate({ to: "/home", replace: true });
-    });
+    if (!redo) {
+      void profileRepo.get(userId).then((profile) => {
+        if (profile?.questionnaire_completed) void navigate({ to: "/home", replace: true });
+      });
+    }
     void questionnaireRepo.get(userId).then((existing) => {
       if (existing) setAnswers(existing);
     });
-  }, [userId, navigate]);
+  }, [userId, navigate, redo]);
 
   const set = (patch: Answers) => setAnswers((current) => ({ ...current, ...patch }));
 
@@ -121,7 +128,9 @@ function Questionnaire() {
       });
       const startedAt = answers.last_contact_at ?? new Date().toISOString();
       const streak = await streakRepo.ensure(userId, startedAt);
-      if (streak.started_at !== startedAt) await streakRepo.setStart(userId, streak, startedAt);
+      if (!redo && streak.started_at !== startedAt) {
+        await streakRepo.setStart(userId, streak, startedAt);
+      }
       if (answers.wants_reminders) {
         const granted = await requestNotificationPermission();
         await syncReminders({ enabled: granted, morning: true, evening: true });
