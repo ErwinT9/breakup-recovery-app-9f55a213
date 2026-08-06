@@ -25,6 +25,7 @@ import {
 } from "@/lib/monitoring/performance";
 import { migrateAppState } from "@/lib/appState/migrate";
 import { initNativeOAuthListeners } from "@/lib/auth/oauthNative";
+import { initAndroidBackButton } from "@/lib/native/backButton";
 import { initTheme } from "@/lib/theme";
 import i18n from "@/lib/i18n";
 import { startNetworkWatcher, subscribeNetwork } from "@/lib/offline/network";
@@ -164,7 +165,15 @@ function RootComponent() {
     startNetworkWatcher();
     startSyncEngine();
     markAppReady();
-    return initTheme();
+    const disposeTheme = initTheme();
+    const disposeBack = initAndroidBackButton(() => {
+      void router.navigate({ to: "/home", replace: true });
+    });
+    return () => {
+      disposeTheme?.();
+      disposeBack();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Breadcrumb the current screen/feature so crash reports say where the user was.

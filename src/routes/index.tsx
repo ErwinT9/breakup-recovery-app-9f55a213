@@ -35,7 +35,7 @@ function Splash() {
 
     const timer = window.setTimeout(() => {
       if (loading || cancelled) return;
-      void navigate({ to: session ? "/home" : "/auth" });
+      void navigate({ to: session ? "/home" : "/auth", replace: true });
     }, 2400);
 
     return () => {
