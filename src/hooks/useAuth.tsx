@@ -1,8 +1,9 @@
 import type { Session, User } from "@supabase/supabase-js";
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { deactivatePushToken, syncPushRegistration } from "@/lib/notifications/push";
+import { isOnline } from "@/lib/offline/network";
 import { identifyUser, logOutRevenueCat } from "@/lib/subscription/revenuecat";
 
 type AuthValue = {
@@ -22,9 +23,17 @@ const AuthContext = createContext<AuthValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  // Set only by an explicit sign-out so a failed token refresh while offline
+  // can never drop the cached session.
+  const signingOut = useRef(false);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!nextSession && !signingOut.current && !isOnline()) {
+        // Offline refresh failure — keep the user signed in with cached data.
+        setLoading(false);
+        return;
+      }
       setSession(nextSession);
       setLoading(false);
       if (nextSession?.user) {
@@ -39,7 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (current.session?.user) void syncPushRegistration(current.session.user.id);
     });
 
-    return () => data.subscription.unsubscribe();
+    // Safety net: never leave the splash spinning if the session read stalls
+    // (e.g. a hung token refresh while offline).
+    const settle = window.setTimeout(() => setLoading(false), 3000);
+
+    return () => {
+      window.clearTimeout(settle);
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   const value = useMemo<AuthValue>(
@@ -48,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       signOut: async () => {
+        signingOut.current = true;
         await deactivatePushToken(session?.user?.id ?? null);
         await logOutRevenueCat();
         await supabase.auth.signOut();

@@ -5,10 +5,12 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { HeartLeaf } from "@/components/HeartLeaf";
+import { OfflineScreen } from "@/components/OfflineScreen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { cleanAuthFragment, waitForOAuthSession } from "@/lib/auth/oauthHash";
@@ -39,6 +41,7 @@ function AuthScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { online } = useNetworkStatus();
   const [mode, setMode] = useState<Mode>("welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -75,8 +78,16 @@ function AuthScreen() {
     return () => setNativeOAuthHandlers({});
   }, []);
 
+  // Offline with no cached session: signing in needs the network, so show a
+  // dedicated offline screen rather than a form that can only fail.
+  if (!online && !session) return <OfflineScreen />;
+
   const google = async () => {
     haptic.light();
+    if (!online) {
+      toast.error("You're offline. Connect to the internet to sign in.");
+      return;
+    }
     setBusy(true);
     const { error: oauthError } = await signInWithGoogle();
     if (oauthError) {
@@ -89,6 +100,11 @@ function AuthScreen() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+
+    if (!online) {
+      toast.error("You're offline. Connect to the internet to sign in.");
+      return;
+    }
 
     if (mode === "forgot") {
       const parsed = z.string().email().safeParse(email.trim());
