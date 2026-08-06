@@ -174,6 +174,16 @@ function AuthScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pt-[calc(env(safe-area-inset-top)+3rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
+      {mode !== "welcome" ? (
+        <button
+          type="button"
+          onClick={goBack}
+          aria-label={t("auth.back", "Go back")}
+          className="press mb-4 -ml-2 flex size-10 items-center justify-center rounded-full bg-muted text-foreground"
+        >
+          <ArrowLeft className="size-5" aria-hidden />
+        </button>
+      ) : null}
       <HeartLeaf animate={false} className="size-16" />
       <h1 className="mt-6 text-3xl leading-tight font-semibold tracking-tight">
         {mode === "welcome" ? t("auth.welcomeTitle", "Welcome. You made it here.") : null}
@@ -199,14 +209,14 @@ function AuthScreen() {
             <Button
               variant="secondary"
               className="press h-13 rounded-2xl text-base"
-              onClick={() => setMode("signup")}
+              onClick={() => goTo("signup")}
             >
               {t("auth.signupEmail", "Sign up with email")}
             </Button>
             <Button
               variant="ghost"
               className="press h-13 rounded-2xl text-base"
-              onClick={() => setMode("signin")}
+              onClick={() => goTo("signin")}
             >
               {t("auth.haveAccount", "I already have an account")}
             </Button>
@@ -259,10 +269,10 @@ function AuthScreen() {
             </Button>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <button type="button" className="press" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
+              <button type="button" className="press" onClick={() => goTo(mode === "signin" ? "signup" : "signin")}>
                 {mode === "signin" ? t("auth.createAnAccount", "Create an account") : t("auth.iHaveAccount", "I have an account")}
               </button>
-              <button type="button" className="press" onClick={() => setMode("forgot")}>
+              <button type="button" className="press" onClick={() => goTo("forgot")}>
                 {t("auth.forgotPassword", "Forgot password?")}
               </button>
             </div>
