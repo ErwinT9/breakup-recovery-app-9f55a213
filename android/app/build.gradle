@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// Firebase plugins must be applied before the android {} block so the
+// firebaseCrashlytics extension exists on each build type. They are guarded by
+// google-services.json so the project still builds without Firebase config.
+def hasGoogleServices = file('google-services.json').exists()
+if (hasGoogleServices) {
+    apply plugin: 'com.google.firebase.crashlytics'
+    apply plugin: 'com.google.firebase.firebase-perf'
+}
+
 // Release signing is read from android/keystore.properties (never committed).
 // Copy keystore.properties.example to keystore.properties and fill it in.
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -45,11 +54,24 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Symbolicated release stack traces.
+            if (hasGoogleServices) {
+                firebaseCrashlytics {
+                    mappingFileUploadEnabled true
+                    nativeSymbolUploadEnabled false
+                }
+            }
         }
         debug {
             // No applicationIdSuffix: the package must keep matching
             // google-services.json or FCM stops delivering in debug builds.
             versionNameSuffix "-debug"
+            // Keep local builds fast: reports still arrive, mappings aren't uploaded.
+            if (hasGoogleServices) {
+                firebaseCrashlytics {
+                    mappingFileUploadEnabled false
+                }
+            }
         }
     }
 
@@ -72,6 +94,12 @@ repositories {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // Firebase BoM keeps Crashlytics / Analytics / Performance versions aligned.
+    implementation platform("com.google.firebase:firebase-bom:34.9.0")
+    implementation "com.google.firebase:firebase-crashlytics"
+    implementation "com.google.firebase:firebase-crashlytics-ndk"
+    implementation "com.google.firebase:firebase-analytics"
+    implementation "com.google.firebase:firebase-perf"
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"

@@ -16,7 +16,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { PermissionsProvider } from "@/components/PermissionsProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
-import { installGlobalErrorHandlers } from "@/lib/analytics";
+import { analytics, installGlobalErrorHandlers } from "@/lib/analytics";
+import { featureForPath, initCrashlytics, setScreen } from "@/lib/monitoring/crashlytics";
+import {
+  initPerformance,
+  instrumentWebViewRequests,
+  markAppReady,
+} from "@/lib/monitoring/performance";
 import { migrateAppState } from "@/lib/appState/migrate";
 import { initNativeOAuthListeners } from "@/lib/auth/oauthNative";
 import { initTheme } from "@/lib/theme";
@@ -146,21 +152,35 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
 
   useEffect(() => {
+    initPerformance();
+    instrumentWebViewRequests();
+    void initCrashlytics();
     installGlobalErrorHandlers();
     void migrateAppState();
     initNativeOAuthListeners();
     startNetworkWatcher();
     startSyncEngine();
+    markAppReady();
     return initTheme();
   }, []);
+
+  // Breadcrumb the current screen/feature so crash reports say where the user was.
+  useEffect(() => {
+    const apply = (pathname: string) => setScreen(pathname, featureForPath(pathname));
+    apply(window.location.pathname);
+    return router.subscribe("onResolved", ({ toLocation }) => apply(toLocation.pathname));
+  }, [router]);
 
   // Back online: retry queued writes and silently refresh cached data. The
   // banner hides itself; we never navigate or sign anyone out here.
   useEffect(() => {
     return subscribeNetwork((online) => {
+      analytics.track(online ? "network_online" : "offline_mode");
       if (!online) return;
+      analytics.track("sync_started");
       void flushQueue();
       void queryClient.invalidateQueries();
     });
