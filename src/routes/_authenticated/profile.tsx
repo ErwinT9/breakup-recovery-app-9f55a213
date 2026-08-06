@@ -194,6 +194,7 @@ function SettingsScreen() {
       profileRepo.update(userId, patch),
     onSuccess: (next) => {
       queryClient.setQueryData(["profile", userId], next);
+      analytics.track("profile_updated");
       if (next.display_name) activity.profileSetupDone();
     },
     onError: (error) => toast.error(humanizeError(error)),
