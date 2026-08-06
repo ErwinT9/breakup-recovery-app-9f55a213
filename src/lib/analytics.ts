@@ -1,3 +1,7 @@
+// Guards against an error sink that itself throws: without this, one failing
+// report re-enters window.onerror forever and locks up the WebView.
+let reporting = false;
+
 import { logBreadcrumb, recordNonFatal } from "./monitoring/crashlytics";
 import { platformName } from "./native/platform";
 
@@ -22,10 +26,16 @@ export const analytics = {
     analytics.track("screen_view", { name, platform: platformName() });
   },
   error(error: unknown, context?: Props) {
+    if (reporting) return;
+    reporting = true;
+    try {
     const message = error instanceof Error ? error.message : String(error);
     analytics.track("app_error", { ...context, message });
     recordNonFatal(error, context);
     console.error("[crash]", message, context ?? {});
+    } finally {
+      reporting = false;
+    }
   },
   drain() {
     return [...events];
