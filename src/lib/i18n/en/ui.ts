@@ -82,6 +82,7 @@ export const uiEn = {
   },
   drawer: {
     developerName: "No Contact Labs",
+    feedback: "Give Feedback",
     openSourceLibraries: "Open-source libraries",
     openSourceList: "React, TanStack Router & Query, Capacitor, Supabase JS, Radix UI, Tailwind CSS, lucide-react, canvas-confetti.",
   },
