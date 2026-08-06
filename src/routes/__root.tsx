@@ -21,8 +21,8 @@ import { migrateAppState } from "@/lib/appState/migrate";
 import { initNativeOAuthListeners } from "@/lib/auth/oauthNative";
 import { initTheme } from "@/lib/theme";
 import i18n from "@/lib/i18n";
-import { startNetworkWatcher } from "@/lib/offline/network";
-import { startSyncEngine } from "@/lib/offline/syncQueue";
+import { startNetworkWatcher, subscribeNetwork } from "@/lib/offline/network";
+import { flushQueue, startSyncEngine } from "@/lib/offline/syncQueue";
 
 function NotFoundComponent() {
   return (
@@ -155,6 +155,16 @@ function RootComponent() {
     startSyncEngine();
     return initTheme();
   }, []);
+
+  // Back online: retry queued writes and silently refresh cached data. The
+  // banner hides itself; we never navigate or sign anyone out here.
+  useEffect(() => {
+    return subscribeNetwork((online) => {
+      if (!online) return;
+      void flushQueue();
+      void queryClient.invalidateQueries();
+    });
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
