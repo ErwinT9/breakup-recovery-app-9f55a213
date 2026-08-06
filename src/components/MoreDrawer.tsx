@@ -271,8 +271,38 @@ export function MoreDrawer({
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={noEmailOpen} onOpenChange={setNoEmailOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>No Email App Found</AlertDialogTitle>
+            <AlertDialogDescription>
+              We couldn&apos;t find an email application on your device. You can contact us anytime
+              at: {SUPPORT_EMAIL}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="secondary"
+              className="rounded-2xl"
+              onClick={() => {
+                void (async () => {
+                  const ok = await copySupportEmail();
+                  toastOnce(
+                    "copy-support-email",
+                    ok ? "Email address copied." : "Couldn't copy the address.",
+                    ok ? "success" : "error",
+                  );
+                })();
+              }}
+            >
+              Copy Email Address
+            </Button>
+            <AlertDialogCancel className="rounded-2xl">Close</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        {null}
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("common.logOut")}</AlertDialogTitle>
