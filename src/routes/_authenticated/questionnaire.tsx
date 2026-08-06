@@ -94,7 +94,7 @@ function Questionnaire() {
     analytics.screen("questionnaire");
     if (!userId) return;
     void profileRepo.get(userId).then((profile) => {
-      if (profile?.questionnaire_completed) void navigate({ to: "/home" });
+      if (profile?.questionnaire_completed) void navigate({ to: "/home", replace: true });
     });
     void questionnaireRepo.get(userId).then((existing) => {
       if (existing) setAnswers(existing);
@@ -135,7 +135,7 @@ function Questionnaire() {
       analytics.track("questionnaire_completed");
       activity.onboardingDone();
       if (answers.nickname) activity.profileSetupDone();
-      void navigate({ to: "/home" });
+      void navigate({ to: "/home", replace: true });
     } catch (error) {
       analytics.error(error, { stage: "questionnaire" });
       toast.error(humanizeError(error));
