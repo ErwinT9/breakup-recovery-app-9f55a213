@@ -1,8 +1,11 @@
 import { isNative } from "@/lib/native/platform";
+import { toast } from "sonner";
+
+import { requestImageSource, type ImageSource } from "@/lib/native/imageSource";
 import {
+  PERMISSION_COPY,
   notifyPermissionBlocked,
   requestPermission,
-  type PermissionKey,
 } from "@/lib/native/permissions";
 
 /**
@@ -18,19 +21,32 @@ const MAX_SIZE = 256;
 const QUALITY = 0.82;
 
 /**
- * Camera + gallery are only requested at the moment a photo is picked. If the
- * OS has permanently denied one, the settings dialog is surfaced instead of a
- * silent failure — the app itself keeps working either way.
+ * Gate for one specific source, checked at the moment the user picks it:
+ *  - camera  → verify CAMERA, request it if the OS can still prompt, and never
+ *              launch the camera when it ends up denied.
+ *  - gallery → system photo picker, so no runtime permission is requested.
+ *
+ * A plain denial gets a friendly explanation; a permanent denial ("Don't ask
+ * again") opens the settings dialog. Either way the rest of the app keeps
+ * working.
  */
-export async function ensurePhotoAccess(): Promise<boolean> {
-  if (!isNative()) return true;
-  const camera = await requestPermission("camera");
-  const photos = await requestPermission("photos");
-  if (camera === "granted" || photos === "granted" || camera === "unsupported") return true;
-  const blocked: PermissionKey | null =
-    camera === "blocked" ? "camera" : photos === "blocked" ? "photos" : null;
-  if (blocked) notifyPermissionBlocked(blocked);
+export async function ensureImageSourceAccess(source: ImageSource): Promise<boolean> {
+  if (!isNative() || source === "gallery") return true;
+  const state = await requestPermission("camera");
+  if (state === "granted" || state === "unsupported") return true;
+  if (state === "blocked") {
+    notifyPermissionBlocked("camera");
+  } else {
+    toast.error(PERMISSION_COPY.camera.title, { description: PERMISSION_COPY.camera.why });
+  }
   return false;
+}
+
+/** Asks which source to use, then gates it. Returns null when cancelled/denied. */
+async function chooseAllowedSource(): Promise<ImageSource | null> {
+  const source = await requestImageSource();
+  if (!source) return null;
+  return (await ensureImageSourceAccess(source)) ? source : null;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -80,14 +96,15 @@ function readFile(file: File): Promise<string> {
  */
 export async function pickAvatar(): Promise<string | null> {
   if (isNative()) {
-    if (!(await ensurePhotoAccess())) return null;
+    const source = await chooseAllowedSource();
+    if (!source) return null;
     try {
       const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
       const photo = await Camera.getPhoto({
         quality: 85,
         allowEditing: true,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt,
+        source: source === "camera" ? CameraSource.Camera : CameraSource.Photos,
         width: 512,
         height: 512,
       });
@@ -116,14 +133,15 @@ export async function pickAvatar(): Promise<string | null> {
  */
 export async function pickImageSource(): Promise<string | null> {
   if (isNative()) {
-    if (!(await ensurePhotoAccess())) return null;
+    const source = await chooseAllowedSource();
+    if (!source) return null;
     try {
       const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
       const photo = await Camera.getPhoto({
         quality: 92,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt,
+        source: source === "camera" ? CameraSource.Camera : CameraSource.Photos,
       });
       return photo.dataUrl ?? null;
     } catch {

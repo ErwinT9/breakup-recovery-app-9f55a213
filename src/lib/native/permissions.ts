@@ -50,7 +50,19 @@ async function markAsked(key: PermissionKey): Promise<void> {
 
 type CameraPermission = "camera" | "photos";
 
+/**
+ * Gallery access goes through the Android Photo Picker / system document
+ * intent, which grants temporary read access to the picked item only. Google
+ * Play best practice (and Android 13+ behaviour) is therefore to request NO
+ * storage or media runtime permission for that path — the app declares none
+ * in the manifest either.
+ */
+export function galleryUsesSystemPicker(): boolean {
+  return isNative();
+}
+
 async function cameraState(which: CameraPermission): Promise<PermissionState> {
+  if (which === "photos" && galleryUsesSystemPicker()) return "unsupported";
   const state = await safeNative<PermissionState>(async () => {
     const { Camera } = await import("@capacitor/camera");
     const status = await Camera.checkPermissions();
