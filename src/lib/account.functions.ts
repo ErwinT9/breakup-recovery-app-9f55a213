@@ -49,6 +49,26 @@ function friendlyFailure(error: unknown): never {
   );
 }
 
+export const debugDeleteProbe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const steps: string[] = [];
+    try {
+      steps.push(`userId=${context.userId}`);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      steps.push("admin-imported");
+      const list = await supabaseAdmin.storage.from(PICTURE_BUCKET).list(context.userId, { limit: 10 });
+      steps.push(`list=${JSON.stringify(list.error ?? list.data?.length)}`);
+      const del = await supabaseAdmin.from("wins").delete().eq("user_id", context.userId);
+      steps.push(`winsDelete=${JSON.stringify(del.error ?? "ok")}`);
+      const au = await supabaseAdmin.auth.admin.deleteUser(context.userId);
+      steps.push(`authDelete=${JSON.stringify(au.error?.message ?? "ok")}`);
+    } catch (e) {
+      steps.push(`THREW=${e instanceof Error ? e.message : JSON.stringify(e)}`);
+    }
+    return { steps };
+  });
+
 /**
  * Permanently deletes the signed-in user: every owned row, their storage
  * objects, and finally the auth identity. All writes run through the service
