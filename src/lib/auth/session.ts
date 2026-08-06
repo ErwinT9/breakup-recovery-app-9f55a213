@@ -30,9 +30,9 @@ function readPersistedSession(): Session | null {
       if (!key || !key.startsWith("sb-") || !key.endsWith("-auth-token")) continue;
       const raw = window.localStorage.getItem(key);
       if (!raw) continue;
-      const parsed = JSON.parse(raw) as Session | { currentSession?: Session };
-      const session = "currentSession" in parsed ? parsed.currentSession : parsed;
-      if (session?.access_token) return session as Session;
+      const parsed = JSON.parse(raw) as Partial<Session> & { currentSession?: Session };
+      const session = parsed.currentSession ?? parsed;
+      if (session.access_token) return session as Session;
     }
   } catch {
     // Ignore malformed storage; treated as "no cached session".
