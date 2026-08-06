@@ -13,6 +13,7 @@ import { I18nextProvider } from "react-i18next";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { PermissionsProvider } from "@/components/PermissionsProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { installGlobalErrorHandlers } from "@/lib/analytics";
@@ -160,9 +161,11 @@ function RootComponent() {
       <I18nextProvider i18n={i18n} defaultNS="translation">
         <AuthProvider>
         <SubscriptionProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <Toaster position="top-center" />
+          <PermissionsProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <Toaster position="top-center" />
+          </PermissionsProvider>
         </SubscriptionProvider>
         </AuthProvider>
       </I18nextProvider>
