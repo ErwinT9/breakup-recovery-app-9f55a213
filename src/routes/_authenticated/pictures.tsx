@@ -15,8 +15,17 @@ import { activity } from "@/lib/badgeActivity";
 import { humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/native/haptics";
+import { isNative } from "@/lib/native/platform";
+import { pickImageSource } from "@/lib/avatar";
 
 const BUCKET = "activity-pictures";
+
+/** Turns the native picker's data URL into an uploadable file. */
+async function dataUrlToFile(dataUrl: string): Promise<File> {
+  const blob = await (await fetch(dataUrl)).blob();
+  const extension = blob.type.split("/")[1] ?? "jpg";
+  return new File([blob], `photo.${extension}`, { type: blob.type || "image/jpeg" });
+}
 
 export const Route = createFileRoute("/_authenticated/pictures")({
   head: () => ({
@@ -114,6 +123,14 @@ function Pictures() {
           disabled={upload.isPending}
           onClick={() => {
             haptic.light();
+            if (isNative()) {
+              // Native picker asks for camera/gallery access only at this point.
+              void pickImageSource().then(async (source) => {
+                if (!source) return;
+                upload.mutate(await dataUrlToFile(source));
+              });
+              return;
+            }
             fileInput.current?.click();
           }}
         >
