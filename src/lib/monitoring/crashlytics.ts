@@ -1,26 +1,34 @@
-import { FirebaseCrashlytics } from "@capacitor-firebase/crashlytics";
 import { Device } from "@capacitor/device";
 import { App } from "@capacitor/app";
 
 import { isNative, platformName } from "../native/platform";
 import { isOnline, subscribeNetwork } from "../offline/network";
 
+type CrashlyticsPlugin = typeof import("@capacitor-firebase/crashlytics").FirebaseCrashlytics;
+
+// Lazy, native-only import so the Firebase web SDK never enters SSR or the
+// browser bundle.
+async function plugin(): Promise<CrashlyticsPlugin> {
+  const mod = await import("@capacitor-firebase/crashlytics");
+  return mod.FirebaseCrashlytics;
+}
+
 type Props = Record<string, string | number | boolean | null | undefined>;
 
 let started = false;
 
 /** Fire-and-forget: monitoring must never break a user flow. */
-function call(fn: () => Promise<unknown>): void {
+function call(fn: (p: CrashlyticsPlugin) => Promise<unknown>): void {
   if (!isNative()) return;
-  void fn().catch(() => undefined);
+  void plugin()
+    .then(fn)
+    .catch(() => undefined);
 }
 
 function setKey(key: string, value: string | number | boolean): void {
   const type = typeof value === "number" ? "float" : typeof value === "boolean" ? "boolean" : "string";
-  call(() =>
-    FirebaseCrashlytics.setCustomKey({ key, value, type } as Parameters<
-      typeof FirebaseCrashlytics.setCustomKey
-    >[0]),
+  call((p) =>
+    p.setCustomKey({ key, value, type } as Parameters<CrashlyticsPlugin["setCustomKey"]>[0]),
   );
 }
 
@@ -32,7 +40,7 @@ export async function initCrashlytics(): Promise<void> {
   if (started || !isNative()) return;
   started = true;
 
-  call(() => FirebaseCrashlytics.setEnabled({ enabled: true }));
+  call((p) => p.setEnabled({ enabled: true }));
   setKey("platform", platformName());
   setKey("network_status", isOnline() ? "online" : "offline");
   subscribeNetwork((online) => setKey("network_status", online ? "online" : "offline"));
@@ -55,11 +63,11 @@ export async function initCrashlytics(): Promise<void> {
 
 /** Anonymous Supabase user id only — never email or display name. */
 export function setCrashUser(userId: string): void {
-  call(() => FirebaseCrashlytics.setUserId({ userId }));
+  call((p) => p.setUserId({ userId }));
 }
 
 export function clearCrashUser(): void {
-  call(() => FirebaseCrashlytics.setUserId({ userId: "" }));
+  call((p) => p.setUserId({ userId: "" }));
 }
 
 /** Current route + high-level feature area, so a crash says where it happened. */
@@ -71,7 +79,7 @@ export function setScreen(route: string, feature: string): void {
 
 export function logBreadcrumb(name: string, props?: Props): void {
   const suffix = props && Object.keys(props).length ? ` ${safeJson(props)}` : "";
-  call(() => FirebaseCrashlytics.log({ message: `${name}${suffix}` }));
+  call((p) => p.log({ message: `${name}${suffix}` }));
 }
 
 /** JS exceptions from the WebView land in Crashlytics as non-fatals. */
@@ -79,8 +87,8 @@ export function recordNonFatal(error: unknown, context?: Props): void {
   const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
   const keysAndValues = toKeysAndValues(context);
-  call(() =>
-    FirebaseCrashlytics.recordException({
+  call((p) =>
+    p.recordException({
       message: stack ? `${message}\n${stack}` : message,
       ...(keysAndValues ? { keysAndValues } : {}),
     }),

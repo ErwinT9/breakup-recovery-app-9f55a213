@@ -1,14 +1,23 @@
-import { FirebasePerformance } from "@capacitor-firebase/performance";
-
 import { isNative } from "../native/platform";
+
+type PerformancePlugin = typeof import("@capacitor-firebase/performance").FirebasePerformance;
+
+// Loaded lazily and only on native: the package's web implementation pulls in
+// the `firebase` JS SDK, which must never reach SSR or the browser bundle.
+async function plugin(): Promise<PerformancePlugin> {
+  const mod = await import("@capacitor-firebase/performance");
+  return mod.FirebasePerformance;
+}
 
 let started = false;
 let coldStartAt = 0;
 let coldStartDone = false;
 
-function call(fn: () => Promise<unknown>): void {
+function call(fn: (p: PerformancePlugin) => Promise<unknown>): void {
   if (!isNative()) return;
-  void fn().catch(() => undefined);
+  void plugin()
+    .then(fn)
+    .catch(() => undefined);
 }
 
 /**
@@ -20,7 +29,7 @@ export function initPerformance(): void {
   if (started || !isNative()) return;
   started = true;
   coldStartAt = Date.now();
-  call(() => FirebasePerformance.setEnabled({ enabled: true }));
+  call((p) => p.setEnabled({ enabled: true }));
 }
 
 /** Cold start → first painted app screen. Recorded once per launch. */
@@ -28,9 +37,7 @@ export function markAppReady(): void {
   if (coldStartDone || !isNative() || !coldStartAt) return;
   coldStartDone = true;
   const duration = Date.now() - coldStartAt;
-  call(() =>
-    FirebasePerformance.record({ traceName: "app_ready", startTime: coldStartAt, duration }),
-  );
+  call((p) => p.record({ traceName: "app_ready", startTime: coldStartAt, duration }));
 }
 
 // One in N WebView requests is reported; enough signal, negligible overhead.
@@ -57,8 +64,8 @@ export function recordHttpRequest(input: {
   } catch {
     // keep defaults
   }
-  call(() =>
-    FirebasePerformance.record({
+  call((p) =>
+    p.record({
       traceName: "webview_http_request",
       startTime: input.startTime,
       duration: input.duration,
