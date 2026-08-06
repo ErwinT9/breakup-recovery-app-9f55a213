@@ -383,17 +383,22 @@ function SettingsScreen() {
   useEffect(() => {
     if (!deletedOpen) return;
     const timer = window.setInterval(() => {
-      setCountdown((value) => {
-        if (value <= 1) {
-          window.clearInterval(timer);
-          void navigate({ to: "/auth", replace: true });
-          return 0;
-        }
-        return value - 1;
-      });
+      setCountdown((value) => (value <= 1 ? 0 : value - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [deletedOpen, navigate]);
+  }, [deletedOpen]);
+
+  // Redirect once the countdown reaches zero. Navigation must live in its own
+  // effect (never inside a state updater) so it actually runs, and we fall back
+  // to a hard load so the Android WebView always lands on the sign-in screen.
+  useEffect(() => {
+    if (!deletedOpen || countdown > 0) return;
+    void navigate({ to: "/auth", replace: true });
+    const fallback = window.setTimeout(() => {
+      if (window.location.pathname !== "/auth") window.location.replace("/auth");
+    }, 400);
+    return () => window.clearTimeout(fallback);
+  }, [deletedOpen, countdown, navigate]);
 
   return (
     <div className="animate-in slide-in-from-right-6 fade-in mx-auto flex min-h-screen w-full max-w-md flex-col duration-300">
