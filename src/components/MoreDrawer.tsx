@@ -5,6 +5,7 @@ import {
   FileText,
   Info,
   LogOut,
+  MessageSquareHeart,
   RefreshCw,
   ScrollText,
   Settings,
@@ -35,6 +36,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { humanizeError } from "@/lib/analytics";
 import { haptic } from "@/lib/native/haptics";
 import { shareApp } from "@/lib/share";
+import { SUPPORT_EMAIL, copySupportEmail, openFeedbackEmail } from "@/lib/feedback";
 import { toastOnce } from "@/lib/toastOnce";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +59,7 @@ export function MoreDrawer({
   const [dateOpen, setDateOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [noEmailOpen, setNoEmailOpen] = useState(false);
   const [newDate, setNewDate] = useState(() => new Date().toISOString().slice(0, 16));
 
   const profile = useQuery({
@@ -109,6 +112,16 @@ export function MoreDrawer({
       icon: Share2,
       label: t("drawer.invite"),
       onClick: () => void shareApp(),
+    },
+    {
+      icon: MessageSquareHeart,
+      label: t("drawer.feedback", "Give Feedback"),
+      onClick: () => {
+        void (async () => {
+          const opened = await openFeedbackEmail();
+          if (!opened) setNoEmailOpen(true);
+        })();
+      },
     },
     {
       icon: FileText,
