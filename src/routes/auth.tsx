@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { HeartLeaf } from "@/components/HeartLeaf";
 import { OfflineScreen } from "@/components/OfflineScreen";
+import { getCachedSession } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
