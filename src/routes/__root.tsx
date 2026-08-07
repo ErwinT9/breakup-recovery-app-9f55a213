@@ -18,6 +18,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { analytics, installGlobalErrorHandlers } from "@/lib/analytics";
 import { featureForPath, initCrashlytics, setScreen } from "@/lib/monitoring/crashlytics";
+import { initInAppMessaging } from "@/lib/monitoring/inAppMessaging";
 import {
   initPerformance,
   instrumentWebViewRequests,
@@ -160,6 +161,7 @@ function RootComponent() {
     initPerformance();
     instrumentWebViewRequests();
     void initCrashlytics();
+    initInAppMessaging();
     installGlobalErrorHandlers();
     void migrateAppState();
     initNativeOAuthListeners();
