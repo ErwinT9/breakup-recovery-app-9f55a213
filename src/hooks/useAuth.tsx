@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 
 import { supabase } from "@/integrations/supabase/client";
 import { analytics } from "@/lib/analytics";
+import { getCachedSession } from "@/lib/auth/session";
 import { clearCrashUser, setCrashUser } from "@/lib/monitoring/crashlytics";
 import { deactivatePushToken, syncPushRegistration } from "@/lib/notifications/push";
 import { isOnline } from "@/lib/offline/network";
@@ -46,13 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    void supabase.auth.getSession().then(({ data: current }) => {
-      setSession(current.session);
-      setLoading(false);
-      if (current.session?.user) {
-        setCrashUser(current.session.user.id);
-        void syncPushRegistration(current.session.user.id);
+    // getCachedSession() falls back to the persisted token when a refresh
+    // fails offline, so relaunching without a connection keeps the user in.
+    void getCachedSession().then((current) => {
+      if (current) {
+        setSession(current);
+        setCrashUser(current.user.id);
+        void syncPushRegistration(current.user.id);
+      } else if (!isOnline()) {
+        // No network and nothing cached — don't wipe an in-memory session.
+      } else {
+        setSession(null);
       }
+      setLoading(false);
     });
 
     // Safety net: never leave the splash spinning if the session read stalls

@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { HeartLeaf } from "@/components/HeartLeaf";
 import { OfflineScreen } from "@/components/OfflineScreen";
+import { getCachedSession } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,6 +87,21 @@ function AuthScreen() {
     if (session) void navigate({ to: "/home", replace: true });
   }, [session, navigate]);
 
+  // Relaunching offline: a persisted session means the user has authenticated
+  // before, so send them straight into the cached app instead of a retry wall.
+  const [cachedChecked, setCachedChecked] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void getCachedSession().then((cached) => {
+      if (cancelled) return;
+      if (cached) void navigate({ to: "/home", replace: true });
+      setCachedChecked(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
   useEffect(() => {
     setNativeOAuthHandlers({
       onError: (message) => {
@@ -99,7 +115,7 @@ function AuthScreen() {
 
   // Offline with no cached session: signing in needs the network, so show a
   // dedicated offline screen rather than a form that can only fail.
-  if (!online && !session) return <OfflineScreen />;
+  if (!online && !session && cachedChecked) return <OfflineScreen />;
 
   const google = async () => {
     haptic.light();

@@ -25,7 +25,10 @@ if (!i18n.isInitialized) {
     nonExplicitSupportedLngs: true,
     initImmediate: false,
     react: { useSuspense: false },
-    parseMissingKeyHandler: (key: string) => lookupEnglish(key) ?? key.split(".").pop() ?? key,
+    // A caller-supplied default (t("a.b", "Nice Label")) always wins over the
+    // raw key — otherwise the UI renders things like "redoOnboarding".
+    parseMissingKeyHandler: (key: string, defaultValue?: string) =>
+      defaultValue ?? lookupEnglish(key) ?? key.split(".").pop() ?? key,
     interpolation: { escapeValue: false },
     returnNull: false,
   };

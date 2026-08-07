@@ -34,6 +34,8 @@ export const en = {
     terms: "Terms & Conditions",
     about: "About",
     restore: "Restore Purchases",
+    feedback: "Give Feedback",
+    redoOnboarding: "Redo Onboarding",
     version: "Version",
     developer: "Developer",
     privacyNote:

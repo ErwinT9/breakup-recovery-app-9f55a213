@@ -1,7 +1,7 @@
 import { isNative, platformName } from "@/lib/native/platform";
 
 export const SUPPORT_EMAIL = "support@vexalabs.biz";
-const SUBJECT = "Healing Path Feedback";
+const SUBJECT = "No Contact Tracker: Breakup Reset Feedback";
 
 type DeviceMeta = {
   appVersion: string;
@@ -48,42 +48,48 @@ async function collectMeta(): Promise<DeviceMeta> {
 export async function buildFeedbackMailto(): Promise<string> {
   const meta = await collectMeta();
   const body = [
-    "Hi Vexa Labs,",
-    "",
-    "I'd like to share the following feedback:",
-    "",
-    "",
-    "",
-    "--------------------",
     `App Version: ${meta.appVersion}`,
     `Build Number: ${meta.buildNumber}`,
     `Device Model: ${meta.deviceModel}`,
     `${isNative() && platformName() === "ios" ? "iOS" : "Android"} Version: ${meta.osVersion}`,
+    "--------------------",
+    "",
+    "",
   ].join("\n");
 
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(body)}`;
 }
 
-/** Opens the OS default mail app. Resolves false when nothing can handle mailto:. */
+/**
+ * Opens the OS mail chooser.
+ *
+ * On Android the Capacitor bridge turns a `mailto:` navigation into a standard
+ * ACTION_VIEW intent, which is exactly the system behaviour we want (chooser
+ * when several mail apps exist, direct launch when a default is set) and needs
+ * no runtime permission. The previous implementation probed a non-existent
+ * `App.openUrl` API and reported "no email app" on every device — we now only
+ * report failure when the navigation itself throws.
+ */
 export async function openFeedbackEmail(): Promise<boolean> {
   const href = await buildFeedbackMailto();
+  if (typeof window === "undefined" || typeof document === "undefined") return false;
 
-  if (isNative()) {
-    try {
-      const { App } = await import("@capacitor/app");
-      const canOpen = (App as unknown as { openUrl?: (o: { url: string }) => Promise<{ completed: boolean }> })
-        .openUrl;
-      if (canOpen) {
-        const result = await canOpen.call(App, { url: href });
-        return result?.completed !== false;
-      }
-    } catch {
-      return false;
-    }
+  // An anchor click keeps the user gesture, which some WebViews require before
+  // handing an external scheme to the OS.
+  try {
+    const link = document.createElement("a");
+    link.href = href;
+    link.rel = "noopener";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    return true;
+  } catch {
+    /* fall through to a direct navigation */
   }
 
   try {
-    if (typeof window === "undefined") return false;
     window.location.href = href;
     return true;
   } catch {
