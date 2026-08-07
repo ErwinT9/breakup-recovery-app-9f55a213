@@ -109,6 +109,7 @@ function Questionnaire() {
     void questionnaireRepo.get(userId).then((existing) => {
       if (existing) setAnswers(existing);
     });
+    return () => suppressInAppMessages(false);
   }, [userId, navigate, redo]);
 
   const set = (patch: Answers) => setAnswers((current) => ({ ...current, ...patch }));
