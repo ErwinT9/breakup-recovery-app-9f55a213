@@ -31,6 +31,24 @@ export type QueueItem = {
 };
 
 const MAX_ATTEMPTS = 8;
+const NETWORK_TIMEOUT_MS = 10_000;
+
+/** A hung request must not wedge the whole flush loop. */
+function withTimeout<T>(promise: PromiseLike<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("network-timeout")), NETWORK_TIMEOUT_MS);
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
 
 type Listener = (pending: number) => void;
 const listeners = new Set<Listener>();
@@ -78,12 +96,13 @@ export async function flushQueue(): Promise<void> {
     for (const item of queue) {
       try {
         const query = supabase.from(item.table);
-        const { error } =
+        const { error } = await withTimeout(
           item.op === "delete"
-            ? await query.delete().eq("id", item.id)
-            : await query.upsert(item.payload as never, {
+            ? query.delete().eq("id", item.id)
+            : query.upsert(item.payload as never, {
                 onConflict: item.onConflict ?? "id",
-              });
+              }),
+        );
         if (error) throw error;
       } catch (error) {
         const attempts = item.attempts + 1;
