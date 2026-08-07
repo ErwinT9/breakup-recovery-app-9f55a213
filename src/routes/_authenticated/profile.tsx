@@ -8,7 +8,6 @@ import {
 
   Image as ImageIcon,
   Moon,
-  RefreshCw,
   Trash2,
   Upload,
   UserRound,
