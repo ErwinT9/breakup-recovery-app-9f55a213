@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { activity } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
+import { suppressInAppMessages } from "@/lib/monitoring/inAppMessaging";
 import { requestNotificationPermission, syncReminders } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +98,8 @@ function Questionnaire() {
 
   useEffect(() => {
     analytics.screen("questionnaire");
+    // Keep a campaign from covering the onboarding controls.
+    suppressInAppMessages(true);
     if (!userId) return;
     if (!redo) {
       void profileRepo.get(userId).then((profile) => {
@@ -106,6 +109,7 @@ function Questionnaire() {
     void questionnaireRepo.get(userId).then((existing) => {
       if (existing) setAnswers(existing);
     });
+    return () => suppressInAppMessages(false);
   }, [userId, navigate, redo]);
 
   const set = (patch: Answers) => setAnswers((current) => ({ ...current, ...patch }));
