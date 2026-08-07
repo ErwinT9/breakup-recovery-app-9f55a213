@@ -54,6 +54,31 @@ async function cacheWrite(name: string, userId: string, value: unknown): Promise
 }
 
 /**
+ * Android WebViews frequently report `navigator.onLine === true` on a dead
+ * connection (captive portals, doze, flaky mobile data). A Supabase fetch then
+ * hangs forever and the UI waits on a promise that never settles — which is
+ * why Save/Celebrate buttons stayed disabled offline. Every network call is
+ * therefore bounded; a timeout is treated exactly like being offline.
+ */
+const NETWORK_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms = NETWORK_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("network-timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
+
+/**
  * Offline-first read: resolve from the local cache instantly, then refresh from
  * Supabase when a connection exists. Never throws to the UI.
  */
@@ -66,7 +91,7 @@ async function readThrough<T>(
   const cached = await cacheRead<T>(name, userId, fallback);
   if (!isOnline()) return cached;
   try {
-    const fresh = await fetcher();
+    const fresh = await withTimeout(fetcher());
     await cacheWrite(name, userId, fresh);
     return fresh;
   } catch (error) {
@@ -85,9 +110,11 @@ async function writeThrough(
   // background queue and return stale server state.
   if (isOnline()) {
     try {
-      const { error } = await supabase
-        .from(table)
-        .upsert(payload as never, { onConflict: onConflict ?? "id" });
+      const { error } = await withTimeout(
+        Promise.resolve(
+          supabase.from(table).upsert(payload as never, { onConflict: onConflict ?? "id" }),
+        ),
+      );
       if (error) throw error;
       return;
     } catch (error) {
