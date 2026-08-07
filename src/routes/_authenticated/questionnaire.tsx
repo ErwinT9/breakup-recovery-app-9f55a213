@@ -132,12 +132,26 @@ function Questionnaire() {
         await streakRepo.setStart(userId, streak, startedAt);
       }
       if (answers.wants_reminders) {
-        const granted = await requestNotificationPermission();
-        await syncReminders({ enabled: granted, morning: true, evening: true });
+        // Never let a stalled native permission dialog block completion —
+        // on some devices this promise simply never settles.
+        try {
+          const granted = await Promise.race([
+            requestNotificationPermission(),
+            new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 8000)),
+          ]);
+          if (granted) {
+            await Promise.race([
+              syncReminders({ enabled: true, morning: true, evening: true }),
+              new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+            ]);
+          }
+        } catch (error) {
+          analytics.error(error, { stage: "questionnaire_reminders" });
+        }
       }
       queryClient.setQueryData(["profile", userId], profile);
       queryClient.setQueryData(["streak", userId], streak);
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] !== "profile",
       });
       haptic.success();
@@ -148,6 +162,9 @@ function Questionnaire() {
     } catch (error) {
       analytics.error(error, { stage: "questionnaire" });
       toast.error(humanizeError(error));
+      // Never strand the user on the last step: the answers are cached
+      // locally and will sync, so continue into the app regardless.
+      void navigate({ to: "/home", replace: true });
     } finally {
       setSaving(false);
     }
