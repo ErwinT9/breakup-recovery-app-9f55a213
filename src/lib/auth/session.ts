@@ -13,8 +13,14 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function getCachedSession(): Promise<Session | null> {
   try {
-    const { data } = await supabase.auth.getSession();
-    return data.session ?? null;
+    // getSession() silently attempts a token refresh; offline that call can
+    // hang or resolve with `session: null` even though a valid session is
+    // persisted. Bound it, and always fall back to the stored session.
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    return result?.data?.session ?? readPersistedSession();
   } catch {
     // Network/refresh failure — fall through to the raw persisted session.
     return readPersistedSession();
