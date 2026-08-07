@@ -72,4 +72,26 @@
 
     <!-- Camera / gallery are optional: the app still installs on devices without a camera -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Android 11+ package visibility: without these the system cannot resolve
+         installed email clients for a mailto: intent and the launch silently
+         fails ("No email app found" even when several are installed). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mailto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 </manifest>
