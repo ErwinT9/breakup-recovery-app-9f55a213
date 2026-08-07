@@ -596,54 +596,6 @@ function SettingsScreen() {
           </Select>
         </SoftCard>
 
-        <SoftCard className="space-y-3">
-          <Row
-            icon={Download}
-            title={t("settings.exportTitle")}
-            description={t("settings.exportDesc")}
-          />
-          <Button
-            variant="secondary"
-            className="press h-11 w-full rounded-2xl"
-            onClick={() => void exportData()}
-          >
-            {t("settings.exportBtn")}
-          </Button>
-        </SoftCard>
-
-        <SoftCard className="space-y-3">
-          <Row
-            icon={Cloud}
-            title={t("settings.backup")}
-            description={online ? t("settings.connected") : t("settings.offline")}
-          />
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>
-              {t("settings.status")}:{" "}
-              {online
-                ? pending > 0
-                  ? t("settings.syncing")
-                  : t("settings.upToDate")
-                : t("settings.waiting")}
-            </li>
-            <li>
-              {t("settings.pendingUploads")}: {pending}
-            </li>
-            <li>
-              {t("settings.lastSync")}:{" "}
-              {lastSync ? new Date(lastSync).toLocaleString() : t("settings.notYet")}
-            </li>
-          </ul>
-          <Button
-            variant="secondary"
-            className="press h-11 w-full rounded-2xl"
-            onClick={() => void syncNow()}
-          >
-            <RefreshCw className="size-4" aria-hidden />
-            {t("settings.syncNow")}
-          </Button>
-        </SoftCard>
-
         {!isPremium ? (
           <Link to="/paywall" className="press block">
             <SoftCard className="bg-lavender flex items-center gap-3">
