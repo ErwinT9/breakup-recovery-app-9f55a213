@@ -93,8 +93,7 @@ export function DailyTasks() {
           <p className="font-medium">{t("tasks.title", "Daily Tasks")}</p>
           <p className="text-sm text-muted-foreground">{t("tasks.subtitle", "Complete today's healing activities.")}</p>
         </div>
-        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-          {completed} / {tasks.length}
+        <span className="flex items-center text-sm text-muted-foreground">
           <ChevronDown
             className={cn("size-4 transition-transform duration-300", open && "rotate-180")}
             aria-hidden
