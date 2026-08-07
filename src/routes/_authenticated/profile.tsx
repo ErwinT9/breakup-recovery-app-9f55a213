@@ -4,9 +4,7 @@ import {
   ArrowLeft,
   Bell,
   CalendarDays,
-  Cloud,
   Crown,
-  Download,
 
   Image as ImageIcon,
   Moon,
@@ -48,7 +46,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { clearUserCache, profileRepo, streakRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
 import { activity } from "@/lib/badgeActivity";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,7 +68,6 @@ import {
   type NotificationPrefs,
 } from "@/lib/notifications";
 import { notifyPermissionBlocked, requestPermission } from "@/lib/native/permissions";
-import { flushQueue } from "@/lib/offline/syncQueue";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -122,7 +118,6 @@ function SettingsScreen() {
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { online, pending } = useNetworkStatus();
   const { isPremium } = useSubscription();
   const theme = useTheme();
 
@@ -131,7 +126,6 @@ function SettingsScreen() {
   const [avatar, setAvatar] = useState("");
   const [recovery, setRecovery] = useState("");
   const [notifs, setNotifs] = useState<NotifPrefs>(DEFAULT_NOTIFS);
-  const [lastSync, setLastSync] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [finalOpen, setFinalOpen] = useState(false);
@@ -146,7 +140,6 @@ function SettingsScreen() {
   useEffect(() => {
     analytics.screen("settings");
     void loadNotificationPrefs().then(setNotifs);
-    void storage.get<string | null>("nc:last-sync", null).then(setLastSync);
     void storage.get<boolean>(NOTIF_ENABLED_KEY, false).then((value) => setNotifOn(Boolean(value)));
   }, []);
 
@@ -332,32 +325,6 @@ function SettingsScreen() {
     await update.mutateAsync({ avatar_url: null });
     await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
     toastOnce("avatar-removed", t("toast.photoRemoved"), "success");
-  };
-
-  const syncNow = async () => {
-    haptic.light();
-    await flushQueue();
-    const stamp = new Date().toISOString();
-    await storage.set("nc:last-sync", stamp);
-    setLastSync(stamp);
-    toastOnce("backup-complete", t("toast.backupComplete"), "success");
-  };
-
-  const exportData = async () => {
-    haptic.light();
-    const payload = {
-      exported_at: new Date().toISOString(),
-      profile: profile.data,
-      streak: streak.data,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "no-contact-tracker-data.json";
-    link.click();
-    URL.revokeObjectURL(url);
-    toastOnce("exported", t("toast.exported"), "success");
   };
 
   const deleteAccount = async () => {
